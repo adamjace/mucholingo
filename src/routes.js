@@ -1,9 +1,10 @@
 const messageHandler = require('./handler/message')
 const errorHandler = require('./handler/error')
+const bot = require('./lib/bot')
 
 class Routes {
 
-  static makeRoutes(app, bot) {
+  static makeRoutes(app) {
 
     const get = (req, res)  => {
       return bot._verify(req, res)
@@ -17,7 +18,7 @@ class Routes {
     app.get('/', get)
     app.post('/', post)
     bot.on('error', errorHandler)
-    bot.on('message', messageHandler.bind(this, bot))
+    bot.on('message', messageHandler)
   }
 }
 
