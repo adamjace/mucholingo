@@ -1,0 +1,16 @@
+{
+  "name": "lingo-bot",
+  "version": "1.0.0",
+  "description": "Translator bot for FB Messenger",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "messenger-bot": "^2.3.0"
+  }
+}
