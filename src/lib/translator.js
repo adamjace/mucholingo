@@ -1,10 +1,6 @@
 class Translator {
   
-  constructor() {
-  
-  }
-
-  translate(message) {
+  translate(message, context) {
     return 'This is a translated message...'
   }
 

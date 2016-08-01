@@ -4,13 +4,17 @@
   "description": "Translator bot for FB Messenger",
   "main": "app.js",
   "scripts": {
-    "start": "node src/app.js"
+    "start": "node src/app.js --harmony"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.4.1",
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
-    "messenger-bot": "^2.3.0"
+    "lodash": "^4.14.1",
+    "messenger-bot": "^2.3.0",
+    "mixpanel": "^0.4.0",
+    "redis": "^2.6.2"
   }
 }

@@ -7,7 +7,7 @@ const Logger = require('./lib/logger')
 const config = require('./config')
 const Routes = require('./routes')
 
-// expressify the app
+// create the app
 let app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({

@@ -1,6 +1,6 @@
-const messageHandler = require('./handler/message')
-const errorHandler = require('./handler/error')
 const bot = require('./lib/bot')
+const db = require('./db/redis')
+const MessageHandler = require('./handler/message')
 
 class Routes {
 
@@ -15,10 +15,16 @@ class Routes {
       res.end(JSON.stringify({status: 'ok'}))
     }
 
+    const getKey = (req, res) => {
+      db.getAsync(req.query.key).then(function(value) {
+        res.send(value)
+      });
+    }
+
     app.get('/', get)
     app.post('/', post)
-    bot.on('error', errorHandler)
-    bot.on('message', messageHandler)
+    app.get('/test', MessageHandler.handleMessage)
+    app.get('/getkey', getKey)
   }
 }
 
