@@ -1,17 +1,16 @@
 const Bot = require('messenger-bot')
 const config = require('../config')
-const messageHandler = require('../handler/message')
-const errorHandler = require('../handler/error')
+const MessageHandler = require('../handler/message')
+const ErrorHandler = require('../handler/error')
 
-const bot = new Bot({
+let bot = new Bot({
   token: config.fb_token,
-  verify: config.fb_verify
+  verify: config.fb_verify,
+  app_secret: config.fb_secret
 })
 
-bot.on('error', errorHandler)
-bot.on('message', messageHandler)
+bot.on('error', ErrorHandler.handleError)
+bot.on('message', MessageHandler.handleMessage.bind(null, bot))
 
-module.exports = (() => {
-  return bot
-})()
+module.exports = bot
 

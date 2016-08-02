@@ -11,6 +11,7 @@ class Routes {
     }
 
     const post = (req, res)  => {
+      console.log(JSON.stringify(req.body))
       bot._handleMessage(req.body)
       res.end(JSON.stringify({status: 'ok'}))
     }
@@ -21,10 +22,17 @@ class Routes {
       });
     }
 
+    const botTest = () => {
+      bot.getProfile('adamjace', () => {
+        console.log('in the callback')
+      })
+    }
+
     app.get('/', get)
     app.post('/', post)
     app.get('/test', MessageHandler.handleMessage)
     app.get('/getkey', getKey)
+    app.get('/bot', botTest)
   }
 }
 
