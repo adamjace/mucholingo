@@ -12,6 +12,7 @@
     "bluebird": "^3.4.1",
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
+    "google-translate": "^1.0.6",
     "lodash": "^4.14.1",
     "messenger-bot": "^2.3.0",
     "mixpanel": "^0.4.0",
