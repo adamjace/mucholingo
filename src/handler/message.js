@@ -80,7 +80,7 @@ class MessageHandler {
       then((result) => {
         reply({ text: result }, (err) => {
           if (err) Logger.log(err)
-          mixpanel.track('I send a message to be translated', sender)
+          mixpanel.track('I send a message to be translated', sender, message)
         })
       }).
       catch((err) => {
