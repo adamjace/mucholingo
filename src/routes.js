@@ -1,3 +1,5 @@
+'use strict'
+
 const bot = require('./lib/bot')
 const db = require('./db/redis')
 const MessageHandler = require('./handler/message')

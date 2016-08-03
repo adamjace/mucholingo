@@ -1,3 +1,5 @@
+'use strict'
+
 const Bot = require('messenger-bot')
 const config = require('../config')
 const MessageHandler = require('../handler/message')

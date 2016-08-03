@@ -1,3 +1,5 @@
+'use strict'
+
 const mixpanel = require('mixpanel')
 const config = require('../config')
 

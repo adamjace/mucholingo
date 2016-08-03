@@ -1,3 +1,5 @@
+'use strict'
+
 const redis = require('redis')
 const bluebird = require('bluebird')
 const config = require('../config')

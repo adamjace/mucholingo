@@ -1,3 +1,5 @@
+'use strict'
+
 const config = require('../config')
 const googleTranslate = require('google-translate')(config.google_key)
 const Promise = require('bluebird')

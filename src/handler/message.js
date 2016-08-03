@@ -1,3 +1,5 @@
+'use strict'
+
 const t = require('../lib/translator')
 const Logger = require('../lib/logger')
 const languages = require('../lib/lang')
@@ -10,7 +12,8 @@ class MessageHandler {
   static handleMessage(bot, payload, reply) {
     const { sender, message } = payload
     bot.getProfile(sender.id, (err, profile) => {
-      if (err) throw err
+      console.log(sender.id)
+      if (err) return Logger.log(err)
       if (_.includes(message.text, '/getstarted')) return MessageHandler.handleGetStarted(sender, profile, reply)
       if (_.includes(message.text, '/change')) return MessageHandler.handleChange(sender, reply)
       // check if we have a context for translation
@@ -24,7 +27,7 @@ class MessageHandler {
 
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `Hello, hola and bonjour! Let's get started. What language you would like me to translate for you? For example, type "english to spanish" or "german to french"`
+      text: `Hello, Konichiwa and Bonjour! I'm Lingo and I'll be your translator bot`
     })
     mixpanel.setPerson(sender, profile)
     mixpanel.track('I click to get started', sender)
@@ -42,22 +45,22 @@ class MessageHandler {
   static handleNoContext(sender, message, reply) {
     const context = MessageHandler.getContext(message.text)
     if (!context.has) {
+      mixpanel.track('I incorrectly set context', sender, message)
       return reply({
         text: `I didn't quite catch that. Tell me what language you would like me to translate. For example, type "english to spanish" or "german to french"`
       })
-      mixpanel.track('I incorrectly set context', sender, message)
     }
-    return MessageHandler.handleContext(context, sender, message, reply)
+    return MessageHandler.handleIncomingContext(context, sender, message, reply)
   }
 
-  static handleContext(context, sender, message, reply) {
+  static handleIncomingContext(context, sender, message, reply) {
     // we have context, store it and reply
     const contextValue = `${context.matches[0].code}:${context.matches[1].code}`
     db.setAsync(sender.id, contextValue).then((err, resp) => {
+      mixpanel.track('I set context', sender, message)
       return reply({
         text: `Got it! ${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Now go ahead and tell me what to translate. Type "/change" at anytime to switch languages`
       })
-      mixpanel.track('I set context', sender, message)
     })
   }
 

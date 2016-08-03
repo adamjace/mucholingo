@@ -1,3 +1,5 @@
+'use strict'
+
 const Logger = require('../lib/logger')
 
 class ErrorHandler {

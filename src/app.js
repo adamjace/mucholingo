@@ -1,6 +1,8 @@
-'use strict';
+'use strict'
 
+const fs = require('fs')
 const http = require('http')
+const https = require('https')
 const express = require('express')
 const bodyParser = require('body-parser')
 const Logger = require('./lib/logger')
@@ -19,4 +21,11 @@ Routes.makeRoutes(app)
 
 // start the server
 http.createServer(app).listen(`${config.port}`)
+
+// secure server
+const options = {
+  key: fs.readFileSync('ssl/key.pem'),
+  cert: fs.readFileSync('ssl/cert.pem')
+}
+https.createServer(options, app).listen(443)
 Logger.log(`Lingo Bot server running on port ${config.port}`)
