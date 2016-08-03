@@ -11,14 +11,21 @@ class MessageHandler {
 
   static handleMessage(bot, payload, reply) {
     const { sender, message } = payload
+    bot.setTyping(sender.id, true)
     bot.getProfile(sender.id, (err, profile) => {
-      console.log(sender.id)
+
       if (err) return Logger.log(err)
-      if (_.includes(message.text, '/getstarted')) return MessageHandler.handleGetStarted(sender, profile, reply)
-      if (_.includes(message.text, '/change')) return MessageHandler.handleChange(sender, reply)
-      // check if we have a context for translation
+
       db.getAsync(sender.id).then((context) => {
-        if (context === null) return MessageHandler.handleNoContext(sender, message, reply)
+        if (_.includes(message.text, 'Get started')) {
+          return MessageHandler.handleGetStarted(sender, profile, reply)
+        }
+        if (_.includes(message.text, '/change')) {
+          return MessageHandler.handleChange(sender, reply)
+        }
+        if (context === null) {
+          return MessageHandler.handleNoContext(sender, message, reply)
+        }
         // we made it! translate the message
         MessageHandler.handleTranslation(context, sender, message, reply) 
       })
@@ -27,27 +34,30 @@ class MessageHandler {
 
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `Hello, Konichiwa and Bonjour! I'm Lingo and I'll be your translator bot`
+      text: `Hello there ${profile.first_name}! What languages am I translating for you? For example, type "english to spanish" or "german to french"`
+    }, () => {
+      mixpanel.setPerson(sender, profile)
+      mixpanel.track('I click to get started', sender)  
     })
-    mixpanel.setPerson(sender, profile)
-    mixpanel.track('I click to get started', sender)
   }
 
   static handleChange(sender, reply) {
     db.delAsync(sender.id).then((err, resp) => {
-      reply({
+      return reply({
         text: `Sure thing! What language you would like me to translate for you now? For example, type "english to spanish" or "german to french"`
+      }, () => {
+        mixpanel.track('I change context', sender)
       })
-      mixpanel.track('I change context', sender)
     })
   }
 
   static handleNoContext(sender, message, reply) {
     const context = MessageHandler.getContext(message.text)
     if (!context.has) {
-      mixpanel.track('I incorrectly set context', sender, message)
       return reply({
-        text: `I didn't quite catch that. Tell me what language you would like me to translate. For example, type "english to spanish" or "german to french"`
+        text: `I didn't quite catch that. Type, for example: "english to spanish" or "german to french"`
+      }, () => {
+        mixpanel.track('I incorrectly set context', sender, message)
       })
     }
     return MessageHandler.handleIncomingContext(context, sender, message, reply)
@@ -57,9 +67,10 @@ class MessageHandler {
     // we have context, store it and reply
     const contextValue = `${context.matches[0].code}:${context.matches[1].code}`
     db.setAsync(sender.id, contextValue).then((err, resp) => {
-      mixpanel.track('I set context', sender, message)
       return reply({
-        text: `Got it! ${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Now go ahead and tell me what to translate. Type "/change" at anytime to switch languages`
+        text: `${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Got it! Now go ahead and tell me what to translate. Type "/change" at anytime to switch languages`
+      }, () => {
+        mixpanel.track('I set context', sender, message)
       })
     })
   }
@@ -68,7 +79,7 @@ class MessageHandler {
     t.translate(message.text, context).
       then((result) => {
         reply({ text: result }, (err) => {
-          if (err) throw err
+          if (err) Logger.log(err)
           mixpanel.track('I send a message to be translated', sender)
         })
       }).

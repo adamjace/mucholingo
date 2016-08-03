@@ -13,7 +13,8 @@ class Mixpanel {
       $last_name: profile.last_name,
       $created: (new Date()).toISOString(),
       locale: profile.locale,
-      timezone: profile.timezone
+      timezone: profile.timezone,
+      gender: profile.gender
     })
   }
 

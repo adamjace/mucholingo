@@ -24,17 +24,8 @@ class Routes {
       });
     }
 
-    const botTest = () => {
-      bot.getProfile('adamjace', () => {
-        console.log('in the callback')
-      })
-    }
-
     app.get('/', get)
     app.post('/', post)
-    app.get('/test', MessageHandler.handleMessage)
-    app.get('/getkey', getKey)
-    app.get('/bot', botTest)
   }
 }
 
