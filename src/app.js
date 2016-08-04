@@ -23,9 +23,9 @@ Routes.makeRoutes(app)
 http.createServer(app).listen(`${config.port}`)
 
 // secure server
-// const options = {
-//   key: fs.readFileSync('ssl/key.pem'),
-//   cert: fs.readFileSync('ssl/cert.pem')
-// }
-// https.createServer(options, app).listen(443)
+const options = {
+  key: fs.readFileSync('ssl/key.pem'),
+  cert: fs.readFileSync('ssl/cert.pem')
+}
+https.createServer(options, app).listen(443)
 Logger.log(`Lingo Bot server running on port ${config.port}`)
