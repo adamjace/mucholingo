@@ -4,7 +4,9 @@
   "description": "Translator bot for FB Messenger",
   "main": "app.js",
   "scripts": {
-    "start": "node src/app.js"
+    "start": "NODE_ENV=production forever sudo start src/app.js",
+    "stop": "forever stop src/app.js",
+    "dev": "node src/app.js"
   },
   "author": "",
   "license": "ISC",
