@@ -2,6 +2,7 @@
 
 const bot = require('./lib/bot')
 const db = require('./db/redis')
+const Logger = require('./lib/logger')
 const MessageHandler = require('./handler/message')
 
 class Routes {
@@ -13,15 +14,9 @@ class Routes {
     }
 
     const post = (req, res)  => {
-      console.log(JSON.stringify(req.body))
+      Logger.log(JSON.stringify(req.body))
       bot._handleMessage(req.body)
       res.end(JSON.stringify({status: 'ok'}))
-    }
-
-    const getKey = (req, res) => {
-      db.getAsync(req.query.key).then(function(value) {
-        res.send(value)
-      });
     }
 
     app.get('/', get)

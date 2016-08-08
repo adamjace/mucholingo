@@ -27,8 +27,9 @@ http.createServer(app).listen(`${config.port}`)
 // create https
 if (env === 'production') {
   const options = {
-    key: fs.readFileSync('ssl/key.pem'),
-    cert: fs.readFileSync('ssl/cert.pem')
+    key: fs.readFileSync(`ssl/lost1n.space.key`),
+    cert: fs.readFileSync(`ssl/lost1n.space.crt`),
+    ca: [fs.readFileSync(`ssl/gd_bundle-g2-g1.crt`)]
   }
   https.createServer(options, app).listen(443)
 }

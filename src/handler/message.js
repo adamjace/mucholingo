@@ -7,9 +7,15 @@ const mixpanel = require('../lib/mixpanel')
 const db = require('../db/redis')
 const _ = require('lodash')
 
+const responseType = {
+  getStarted: 'Get Started',
+  change: '/change'
+};
+
 class MessageHandler {
 
   static handleMessage(bot, payload, reply) {
+
     const { sender, message } = payload
     bot.setTyping(sender.id, true)
     bot.getProfile(sender.id, (err, profile) => {
@@ -17,10 +23,10 @@ class MessageHandler {
       if (err) return Logger.log(err)
 
       db.getAsync(sender.id).then((context) => {
-        if (_.includes(message.text, 'Get started')) {
+        if (_.includes(message.text, responseType.getStarted)) {
           return MessageHandler.handleGetStarted(sender, profile, reply)
         }
-        if (_.includes(message.text, '/change')) {
+        if (_.includes(message.text, responseType.change)) {
           return MessageHandler.handleChange(sender, reply)
         }
         if (context === null) {
