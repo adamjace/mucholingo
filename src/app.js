@@ -21,17 +21,20 @@ app.use(bodyParser.urlencoded({
 // setup routing
 Routes.makeRoutes(app)
 
-// start the server
-http.createServer(app).listen(`${config.port}`)
-
-// create https
-if (env === 'production') {
+// start https
+//if (env === 'production') {
   const options = {
     key: fs.readFileSync('ssl/lost1n.space.key'),
     cert: fs.readFileSync('ssl/lost1n.space.crt'),
     ca: [fs.readFileSync('ssl/gd_bundle-g2-g1.crt')]
   }
   https.createServer(options, app).listen(443)
-}
+  Logger.log('Server securely running over https...')
+  return
+//} else {
+  // start the (non https) server
+  //http.createServer(app).listen(`${config.port}`)
+  //Logger.log(`Server running on port ${config.port}`)
+//}
 
-Logger.log(`Lingo Bot server running on port ${config.port}`)
+
