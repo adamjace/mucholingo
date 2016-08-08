@@ -4,7 +4,7 @@
   "description": "Translator bot for FB Messenger",
   "main": "app.js",
   "scripts": {
-    "start": "deploy.sh",
+    "start": "./deploy.sh",
     "dev": "node src/app.js"
   },
   "author": "",
