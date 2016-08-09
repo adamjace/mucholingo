@@ -40,7 +40,7 @@ class MessageHandler {
 
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `Hey ${profile.first_name}, let's get started! I speak lots of different languages, so go ahead and tell me what to translate for you.\n\nFor example, type "english to spanish" or "german to french"`
+      text: `Hey ${profile.first_name}, let's get started!\n\nI speak lots of different languages, so go ahead and tell me what to translate for you.\n\nFor example, type "english to spanish" or "german to french"`
     }, () => {
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)  
@@ -50,7 +50,7 @@ class MessageHandler {
   static handleChange(sender, reply) {
     db.delAsync(sender.id).then((err, resp) => {
       return reply({
-        text: `Sure thing! What language you would like me to translate for you now? For example: "english to spanish" or "german to french"`
+        text: `Sure thing. What language you would like me to translate for you now?`
       }, () => {
         mixpanel.track('I change context', sender)
       })
@@ -74,7 +74,7 @@ class MessageHandler {
     const contextValue = `${context.matches[0].code}:${context.matches[1].code}`
     db.setAsync(sender.id, contextValue).then((err, resp) => {
       return reply({
-        text: `${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Got it! Now go ahead and tell me what to say./n/nType "${responseType.change}" at anytime to switch languages`
+        text: `${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Got it! Now go ahead and tell me what to say.\n\nType "${responseType.change}" at anytime to switch languages`
       }, () => {
         mixpanel.track('I set context', sender, message)
       })
