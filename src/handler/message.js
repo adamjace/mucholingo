@@ -74,7 +74,7 @@ class MessageHandler {
     const contextValue = `${context.matches[0].code}:${context.matches[1].code}`
     db.setAsync(sender.id, contextValue).then((err, resp) => {
       return reply({
-        text: `${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Got it! Now go ahead and tell me what to translate. Type "${responseType.change}" at anytime to switch languages`
+        text: `${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Got it! Now go ahead and tell me what to say./n/nType "${responseType.change}" at anytime to switch languages`
       }, () => {
         mixpanel.track('I set context', sender, message)
       })
