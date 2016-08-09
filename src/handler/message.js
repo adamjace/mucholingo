@@ -40,7 +40,7 @@ class MessageHandler {
 
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `OK ${profile.first_name}, let's get started! I speak lots of languages, so go ahead and tell me what to translate for you.\n\nFor example, type "english to spanish" or "german to french"`
+      text: `Hey ${profile.first_name}, let's get started! I speak lots of different languages, so go ahead and tell me what to translate for you.\n\nFor example, type "english to spanish" or "german to french"`
     }, () => {
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)  
@@ -50,7 +50,7 @@ class MessageHandler {
   static handleChange(sender, reply) {
     db.delAsync(sender.id).then((err, resp) => {
       return reply({
-        text: `Sure thing! What language you would like me to translate for you now? For example, type "english to spanish" or "german to french"`
+        text: `Sure thing! What language you would like me to translate for you now? For example: "english to spanish" or "german to french"`
       }, () => {
         mixpanel.track('I change context', sender)
       })
@@ -61,7 +61,7 @@ class MessageHandler {
     const context = MessageHandler.getContext(message.text)
     if (!context.has) {
       return reply({
-        text: `I didn't quite catch that. Type, for example: "english to spanish" or "german to french"`
+        text: `Hmmm... I didn't quite catch that. \n\nType, for example: "english to spanish" or "german to french"`
       }, () => {
         mixpanel.track('I incorrectly set context', sender, message)
       })
