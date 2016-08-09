@@ -8,7 +8,7 @@ const db = require('../db/redis')
 const _ = require('lodash')
 
 const responseType = {
-  getStarted: 'Get Started!',
+  getStarted: '!getstarted',
   change: '!change'
 };
 
@@ -16,14 +16,14 @@ class MessageHandler {
 
   static handleMessage(bot, payload, reply) {
 
-    const { sender, message } = payload
+    const { sender, message, postback } = payload
     bot.setTyping(sender.id, true)
     bot.getProfile(sender.id, (err, profile) => {
 
       if (err) return Logger.log(err)
 
       db.getAsync(sender.id).then((context) => {
-        if (message.text === responseType.getStarted) {
+        if (postback && postback.payload === responseType.getStarted) {
           return MessageHandler.handleGetStarted(sender, profile, reply)
         }
         if (_.includes(message.text, responseType.change)) {
