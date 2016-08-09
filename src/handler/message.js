@@ -40,7 +40,7 @@ class MessageHandler {
 
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `Hello there ${profile.first_name}! What languages am I translating for you? For example, type "english to spanish" or "german to french"`
+      text: `Hi there ${profile.first_name}! I speak many languages; so go ahead and tell me what to translate for you. \n\n For example, type "english to spanish" or "german to french"`
     }, () => {
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)  
