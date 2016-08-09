@@ -15,7 +15,7 @@ const responseType = {
 class MessageHandler {
 
   static handleMessage(bot, payload, reply) {
-
+    console.log('PAYLOAD: ' + payload)
     const { sender, message, postback } = payload
     bot.setTyping(sender.id, true)
     bot.getProfile(sender.id, (err, profile) => {
