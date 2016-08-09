@@ -13,6 +13,7 @@ let bot = new Bot({
 
 bot.on('error', ErrorHandler.handleError)
 bot.on('message', MessageHandler.handleMessage.bind(null, bot))
+bot.on('postback', MessageHandler.handleMessage.bind(null, bot))
 
 module.exports = bot
 
