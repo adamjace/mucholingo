@@ -9,8 +9,6 @@ const Logger = require('./lib/logger')
 const config = require('./config')
 const Routes = require('./routes')
 
-const env = process.env.NODE_ENV || 'development';
-
 // create the app
 let app = express()
 app.use(bodyParser.json())
