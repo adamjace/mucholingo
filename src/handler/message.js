@@ -40,7 +40,7 @@ class MessageHandler {
 
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `Hey ${profile.first_name}, let's get started!\n\nI speak lots of different languages, so go ahead and tell me what to translate for you.\n\nFor example, type "english to spanish" or "german to french"`
+      text: `Hola ${profile.first_name}, let's get started!\n\nI speak lots of different languages, so go ahead and tell me what to translate for you.\n\nFor example, type "english to spanish" or "greek to japanese"`
     }, () => {
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)  
@@ -61,7 +61,7 @@ class MessageHandler {
     const context = MessageHandler.getContext(message.text)
     if (!context.has) {
       return reply({
-        text: `Hmmm... I didn't quite catch that. \n\nType, for example: "english to spanish" or "german to french"`
+        text: `Hmmm... I didn't quite catch that. \n\nType, for example: "english to spanish" or "korean to portugese"`
       }, () => {
         mixpanel.track('I incorrectly set context', sender, message)
       })
