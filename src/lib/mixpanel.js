@@ -8,11 +8,11 @@ let _mixpanel = mixpanel.init(config.mixpanel_token)
 class Mixpanel {
 
   static setPerson(sender, profile) {
-    _mixpanel.identify(sender.id)
-    _mixpanel.people.set({
+    _mixpanel.people.set(sender.id, {
       $first_name: profile.first_name,
       $last_name: profile.last_name,
       $created: (new Date()).toISOString(),
+      distinctId: sender.id,
       locale: profile.locale,
       timezone: profile.timezone,
       gender: profile.gender
