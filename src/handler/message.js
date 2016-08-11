@@ -61,7 +61,7 @@ class MessageHandler {
     const context = MessageHandler.getContext(message.text)
     if (!context.hasTwo) {
       let text = `Hmmm... I didn't quite catch that. \n\nType, for example: "english to spanish" or "korean to portugese"`
-      if (context.hasOne) text = `I only caught ${_.capitalize(context.matches[0])} in there. Type, for example: "english to spanish" or "korean to portugese"`
+      if (context.hasOne) text = `I only caught ${_.capitalize(context.matches[0].name)} in there. Type, for example: "english to spanish" or "korean to portugese"`
       return reply({
         text: text
       }, () => {
