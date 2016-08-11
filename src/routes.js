@@ -1,9 +1,7 @@
 'use strict'
 
 const bot = require('./lib/bot')
-const db = require('./db/redis')
 const Logger = require('./lib/logger')
-const MessageHandler = require('./handler/message')
 
 class Routes {
 

@@ -10,7 +10,7 @@ const _ = require('lodash')
 const responseType = {
   getStarted: '!getstarted',
   change: '!change'
-};
+}
 
 class MessageHandler {
 
@@ -51,9 +51,10 @@ class MessageHandler {
 
   // handleChange
   static handleChange(sender, reply) {
-    db.delAsync(sender.id).then((err, resp) => {
+    db.delAsync(sender.id).then((err) => {
+      if (err) Logger.log(err)
       return reply({
-        text: `Sure thing. What language you would like me to translate for you now?`
+        text: 'Sure thing. What language you would like me to translate for you now?'
       }, () => {
         mixpanel.track('I change context', sender)
       })
@@ -101,7 +102,8 @@ class MessageHandler {
   // handleSetContext
   static handleSetContext(context, sender, message, reply) {
     const contextValue = `${context.matches[0].code}:${context.matches[1].code}`
-    db.setAsync(sender.id, contextValue).then((err, resp) => {
+    db.setAsync(sender.id, contextValue).then((err) => {
+      if (err) Logger.log(err)
       return reply({
         text: `${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Got it! Now go ahead and tell me what to say.\n\n To switch languages at anytime, type "${responseType.change}"`
       }, () => {
@@ -120,7 +122,8 @@ class MessageHandler {
         })
       }).
       catch((err) => {
-        reply({ text: `Oh no, something has gone wrong. Please try that again` })
+        if (err) Logger.log(err)
+        reply({ text: 'Oh no, something has gone wrong. Please try that again' })
       })
   }
 
