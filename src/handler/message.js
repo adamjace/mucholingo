@@ -14,6 +14,7 @@ const responseType = {
 
 class MessageHandler {
 
+  // handleMessage is our main handler
   static handleMessage(bot, payload, reply) {
 
     const { sender, message, postback } = payload
@@ -30,7 +31,7 @@ class MessageHandler {
           return MessageHandler.handleChange(sender, reply)
         }
         if (context === null) {
-          return MessageHandler.handleNoContext(sender, message, reply)
+          return MessageHandler.handleNoContext(sender, profile, message, reply)
         }
         // we made it! translate the message
         MessageHandler.handleTranslation(context, sender, message, reply) 
@@ -38,6 +39,7 @@ class MessageHandler {
     })
   }
 
+  // handleGetStarted
   static handleGetStarted(sender, profile, reply) {
     reply({
       text: `Hola ${profile.first_name}, let's get started!\n\nI speak lots of different languages, so go ahead and tell me what to translate for you.\n\nFor example, type "english to spanish" or "greek to japanese"`
@@ -47,6 +49,7 @@ class MessageHandler {
     })
   }
 
+  // handleChange
   static handleChange(sender, reply) {
     db.delAsync(sender.id).then((err, resp) => {
       return reply({
@@ -57,32 +60,57 @@ class MessageHandler {
     })
   }
 
-  static handleNoContext(sender, message, reply) {
+  // handleNoContext 
+  static handleNoContext(sender, profile, message, reply) {
     const context = MessageHandler.getContext(message.text)
-    if (!context.hasTwo) {
-      let text = `Hmmm... I didn't quite catch that. \n\nType, for example: "english to spanish" or "korean to portugese"`
-      if (context.hasOne) text = `I only caught ${_.capitalize(context.matches[0].name)} in there. Type, for example: "english to spanish" or "korean to portugese"`
-      return reply({
-        text: text
-      }, () => {
-        mixpanel.track('I incorrectly set context', sender, message)
-      })
+    if (context.hasTwo) {
+      return MessageHandler.handleSetContext(context, sender, message, reply)
     }
-    return MessageHandler.handleIncomingContext(context, sender, message, reply)
+    if (MessageHandler.handleGeneralResponse(sender, profile, message, reply) !== false) {
+      return 
+    }
+    
+    let text = `Oops, I didn't quite catch that. \n\nType, for example: "english to spanish" or "korean to portugese"`
+    if (context.hasOne) text = `I only caught ${_.capitalize(context.matches[0].name)} in there. Type, for example: "english to spanish" or "korean to portugese"`
+    return reply({
+      text: text
+    }, () => {
+      mixpanel.track('I incorrectly set context', sender, message)
+    })
   }
 
-  static handleIncomingContext(context, sender, message, reply) {
-    // we have context, store it and reply
+  // handleGeneralResponse such as hello, goodbye etc
+  static handleGeneralResponse(sender, profile, message, reply) {
+    if (_.includes(['goodbye', 'bye', 'adios', 'ciao', 'seeya', 'see you', 'later'], message.text.toLowerCase())) {
+      return reply({
+        text: `Adiós ${profile.gender === 'male' ? 'muchacho' : 'muchacha'}`
+      }, () => {
+        mixpanel.track('I say goodbye without context', sender, message)
+      })
+    }
+    if (_.includes(['hello', 'hi', 'howdy', 'hallo', 'yo', 'hey', 'sup', 'hiya'], message.text.toLowerCase())) {
+      return reply({
+        text: getRandom([`Hi ${profile.first_name}!`, 'Hello', '¡Hola!', `Hey ${profile.first_name}!`, 'Oh hey there!', 'Hallo', 'Howdy', 'Oh Hiiiiii'])
+      }, () => {
+        mixpanel.track('I say hello without context', sender, message)
+      })
+    }
+    return false
+  }
+
+  // handleSetContext
+  static handleSetContext(context, sender, message, reply) {
     const contextValue = `${context.matches[0].code}:${context.matches[1].code}`
     db.setAsync(sender.id, contextValue).then((err, resp) => {
       return reply({
-        text: `${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Got it! Now go ahead and tell me what to say.\n\nType "${responseType.change}" at anytime to switch languages`
+        text: `${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Got it! Now go ahead and tell me what to say.\n\n To switch languages at anytime, type "${responseType.change}"`
       }, () => {
         mixpanel.track('I set context', sender, message)
       })
     })
   }
 
+  // handleTranslation
   static handleTranslation(context, sender, message, reply) {
     t.translate(message.text, context).
       then((result) => {
@@ -96,6 +124,7 @@ class MessageHandler {
       })
   }
 
+  // getContext
   static getContext(message) {
     let matches = []
     const words = message.split(' ')
@@ -112,6 +141,10 @@ class MessageHandler {
       matches: matches
     }
   }
+}
+
+function getRandom(responses) {
+  return responses[Math.floor(Math.random()*responses.length)]
 }
 
 module.exports = MessageHandler
