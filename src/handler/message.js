@@ -59,9 +59,11 @@ class MessageHandler {
 
   static handleNoContext(sender, message, reply) {
     const context = MessageHandler.getContext(message.text)
-    if (!context.has) {
+    if (!context.hasTwo) {
+      const text = `Hmmm... I didn't quite catch that. \n\nType, for example: "english to spanish" or "korean to portugese"`
+      if (context.hasOne) text = `I only caught ${_.capitalize(context.matches[0])} in there. Type, for example: "english to spanish" or "korean to portugese"`
       return reply({
-        text: `Hmmm... I didn't quite catch that. \n\nType, for example: "english to spanish" or "korean to portugese"`
+        text: text
       }, () => {
         mixpanel.track('I incorrectly set context', sender, message)
       })
@@ -104,7 +106,9 @@ class MessageHandler {
       })
     })
     return {
-      has: matches.length === 2,
+      hasTwo: matches.length === 2,
+      hasOne: matches.length === 1,
+      hasNone: matches.length === 0,
       matches: matches
     }
   }
