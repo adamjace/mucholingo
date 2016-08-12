@@ -9,7 +9,8 @@ const _ = require('lodash')
 
 const responseType = {
   getStarted: '!getstarted',
-  change: '!change'
+  change: '!change',
+  switch: '!switch'
 }
 
 class MessageHandler {
@@ -29,6 +30,9 @@ class MessageHandler {
         }
         if (_.includes(message.text, responseType.change)) {
           return MessageHandler.handleChange(sender, reply)
+        }
+        if (_.includes(message.text, responseType.switch)) {
+          return MessageHandler.handleSwitch(context, sender, message, reply)
         }
         if (context === null) {
           return MessageHandler.handleNoContext(sender, profile, message, reply)
@@ -61,17 +65,34 @@ class MessageHandler {
     })
   }
 
+  // handleSwitch
+  static handleSwitch(context, sender, message, reply) {
+    if (context === null) {
+      return reply({
+        text: `I don't know what languages I'm supposed to be translating for you.\n\nType, for example: "thai to french" or "russian to dutch"`
+      }) 
+    }
+    const values = context.split(':')
+    const code = `${values[1]}:${values[0]}`
+    const from = _.capitalize(getLanguageName(values[1]))
+    const to = _.capitalize(getLanguageName(values[0]))
+    return MessageHandler.handleSetContext(code, from, to, sender, message, reply)
+  }
+
   // handleNoContext 
   static handleNoContext(sender, profile, message, reply) {
-    const context = MessageHandler.getContext(message.text)
+    const context = getContext(message.text)
     if (context.hasTwo) {
-      return MessageHandler.handleSetContext(context, sender, message, reply)
+      const code = `${context.matches[0].code}:${context.matches[1].code}`
+      const from = _.capitalize(context.matches[0].name)
+      const to = _.capitalize(context.matches[1].name)
+      return MessageHandler.handleSetContext(code, from, to, sender, message, reply)
     }
     if (MessageHandler.handleGeneralResponse(sender, profile, message, reply) !== false) {
       return 
     }
     
-    let text = `Oops, I didn't quite catch that. \n\nType, for example: "english to spanish" or "korean to portugese"`
+    let text = `Oops, I didn't quite catch that.\n\nType, for example: "english to spanish" or "korean to portugese"`
     if (context.hasOne) text = `I only caught ${_.capitalize(context.matches[0].name)} there.\n\nType, for example: "english to spanish" or "korean to portugese"`
     return reply({
       text: text
@@ -100,12 +121,11 @@ class MessageHandler {
   }
 
   // handleSetContext
-  static handleSetContext(context, sender, message, reply) {
-    const contextValue = `${context.matches[0].code}:${context.matches[1].code}`
-    db.setAsync(sender.id, contextValue).then((err) => {
+  static handleSetContext(code, from, to, sender, message, reply) {
+    db.setAsync(sender.id, code).then((err) => {
       if (err) Logger.log(err)
       return reply({
-        text: `${_.capitalize(context.matches[0].name)} to ${_.capitalize(context.matches[1].name)}. Got it! Now go ahead and tell me what to say.\n\n To switch languages at anytime, type "${responseType.change}"`
+        text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.\n\n To change languages at anytime, type "${responseType.change}"`
       }, () => {
         mixpanel.track('I set context', sender, message)
       })
@@ -126,28 +146,37 @@ class MessageHandler {
         reply({ text: 'Oh no, something has gone wrong. Please try that again' })
       })
   }
+}
 
-  // getContext
-  static getContext(message) {
-    let matches = []
-    const words = message.split(' ')
-    words.forEach((word) => {
-      languages.filter(item => item.name === _.lowerCase(word)).map((lang) => {
-        if (matches.length === 2) return
-        matches.push(lang)
-      })
+// private methods
+// getContext
+function getContext(message) {
+  let matches = []
+  const words = message.split(' ')
+  words.forEach((word) => {
+    languages.filter(item => item.name === _.lowerCase(word)).map((lang) => {
+      if (matches.length === 2) return
+      matches.push(lang)
     })
-    return {
-      hasTwo: matches.length === 2,
-      hasOne: matches.length === 1,
-      hasNone: matches.length === 0,
-      matches: matches
-    }
+  })
+  return {
+    hasTwo: matches.length === 2,
+    hasOne: matches.length === 1,
+    hasNone: matches.length === 0,
+    matches: matches
   }
 }
 
+// getRandom
 function getRandom(responses) {
   return responses[Math.floor(Math.random()*responses.length)]
+}
+
+// getLanguageName
+function getLanguageName(code) {
+  return languages.filter(item => item.code === code).map((lang) => {
+    return lang.name
+  })
 }
 
 module.exports = MessageHandler
