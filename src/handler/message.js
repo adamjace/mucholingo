@@ -11,7 +11,8 @@ const responseType = {
   getStarted: '!getstarted',
   help: '#help',
   change: '#change',
-  switch: '#switch'
+  switch: '#switch',
+  list: '#list'
 }
 
 class MessageHandler {
@@ -77,7 +78,7 @@ class MessageHandler {
       {
         'type': 'postback',
         'title': 'Show all languages',
-        'payload': '!list'
+        'payload': responseType.list
       }
     ]
 
@@ -87,12 +88,12 @@ class MessageHandler {
         {
           'type': 'postback',
           'title': `${switchedContext.from} to ${switchedContext.to}`,
-          'payload': '!switch'
+          'payload': responseType.switch
         },
         {
           'type': 'postback',
           'title': 'Change languages',
-          'payload': '!change'
+          'payload': responseType.change
         }
       )
     }
@@ -177,7 +178,7 @@ class MessageHandler {
     db.setAsync(sender.id, code).then((err) => {
       if (err) Logger.log(err)
       return reply({
-        text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.\n\nAsk for "!help" at any time`
+        text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.\n\nAsk for "${responseType.help}" at any time`
       }, () => {
         mixpanel.track('I set context', sender, message)
       })
