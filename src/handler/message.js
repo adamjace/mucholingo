@@ -8,7 +8,7 @@ const db = require('../db/redis')
 const _ = require('lodash')
 
 const responseType = {
-  help: '#help',
+  help: 'help',
   getStarted: '#getstarted',
   change: '#change',
   switch: '#switch',
@@ -19,7 +19,7 @@ const helpQuickReply = [
   {
     'content_type': 'text',
     'title': 'Need help?',
-    'payload': 'help'
+    'payload': '#help'
   }
 ]
 
@@ -42,7 +42,7 @@ class MessageHandler {
         if (postback && postback.payload) {
           return MessageHandler.handlePostBack(context, postback, profile, sender, reply)
         }
-        if ((_.includes(message.text.toLowerCase(), 'help') && context === null) || message.text === responseType.help) {
+        if (_.includes(message.text.toLowerCase(), responseType.help) && context === null) {
           return MessageHandler.handleHelp(context, sender, reply)
         }
         if (context === null) {
@@ -59,6 +59,9 @@ class MessageHandler {
     if (postback.payload === responseType.getStarted) {
       return MessageHandler.handleGetStarted(sender, profile, reply)
     }
+    if (postback.payload === responseType.help) {
+      return MessageHandler.handleHelp(context, sender, reply)
+    }
     if (postback.payload === responseType.change) {
       return MessageHandler.handleChange(sender, reply)
     }
@@ -68,7 +71,6 @@ class MessageHandler {
     if (postback.payload === responseType.list) {
       return MessageHandler.handleShowAllLanguages(sender, reply)
     }
-    return null
   }
 
   // handleGetStarted
