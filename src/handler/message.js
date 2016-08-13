@@ -39,6 +39,9 @@ class MessageHandler {
         if (_.includes(message.text, responseType.help) || context === null && message.text === 'help') {
           return MessageHandler.handleHelp(context, sender, reply)
         }
+        if (_.includes(message.text, responseType.list)) {
+          return MessageHandler.handleShowAllLanguages(sender, reply)
+        }
         if (context === null) {
           return MessageHandler.handleNoContext(sender, profile, message, reply)
         }
@@ -58,6 +61,9 @@ class MessageHandler {
     }
     if (postback.payload === responseType.switch) {
       return MessageHandler.handleSwitch(context, sender, reply)
+    }
+    if (postback.payload === responseType.list) {
+      return MessageHandler.handleShowAllLanguages(sender, reply)
     }
     return null
   }
@@ -110,6 +116,19 @@ class MessageHandler {
     }, () => {
       mixpanel.track('I ask for help', sender)
     })
+  }
+
+  // handleShowAllLanguages
+  // due to FBs payload size limit we need to chunk the list into seprate bits 
+  static handleShowAllLanguages(sender, reply) {
+    const list = getAllLanguageNames()
+    const first = list.splice(0, list.length / 3)
+    const last = list.splice(0, list.length / 2)
+    reply({text: `OK, here goes...\n\n${first.toString().replace(/,/g, ', ')}`}, () => {
+      reply({text: `${last.toString().replace(/,/g, ', ')}`}, () => {
+        reply({text: `${list.toString().replace(/,/g, ', ')}\n\n *GULP*`})
+      }) 
+    }) 
   }
 
   // handleChange
@@ -272,6 +291,15 @@ function getLanguageName(code) {
   return languages.filter(item => item.code === code).map((lang) => {
     return lang.name
   })
+}
+
+// listAllLanguages
+function getAllLanguageNames() {
+  let list = []
+  languages.forEach(function(lang) {
+    list.push(_.capitalize(lang.name))
+  })
+  return list
 }
 
 module.exports = MessageHandler
