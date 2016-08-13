@@ -8,8 +8,8 @@ const db = require('../db/redis')
 const _ = require('lodash')
 
 const responseType = {
+  help: '#help',
   getStarted: '#getstarted',
-  help: 'help',
   change: '#change',
   switch: '#switch',
   list: '#list'
@@ -42,7 +42,7 @@ class MessageHandler {
         if (postback && postback.payload) {
           return MessageHandler.handlePostBack(context, postback, profile, sender, reply)
         }
-        if (_.includes(message.text.toLowerCase(), responseType.help) && context === null) {
+        if ((_.includes(message.text.toLowerCase(), 'help') && context === null) || message.text === responseType.help) {
           return MessageHandler.handleHelp(context, sender, reply)
         }
         if (context === null) {
@@ -203,7 +203,7 @@ class MessageHandler {
     db.setAsync(sender.id, code).then((err) => {
       if (err) Logger.log(err)
       return reply({
-        text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.\n\nAsk for "${responseType.help}" at any time`
+        text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.\n\nAsk for "help" at any time`
       }, () => {
         mixpanel.track('I set context', sender, message)
       })
