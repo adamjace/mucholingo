@@ -9,6 +9,7 @@ const _ = require('lodash')
 
 const responseType = {
   getStarted: '!getstarted',
+  help: '!help',
   change: '!change',
   switch: '!switch'
 }
@@ -28,11 +29,14 @@ class MessageHandler {
         if (postback && postback.payload === responseType.getStarted) {
           return MessageHandler.handleGetStarted(sender, profile, reply)
         }
-        if (_.includes(message.text, responseType.change)) {
+        if (postback && postback.payload === responseType.change || _.includes(message.text, responseType.change)) {
           return MessageHandler.handleChange(sender, reply)
         }
-        if (_.includes(message.text, responseType.switch)) {
+        if (postback && postback.payload === responseType.switch || _.includes(message.text, responseType.switch)) {
           return MessageHandler.handleSwitch(context, sender, message, reply)
+        }
+        if (_.includes(message.text, responseType.help)) {
+          return MessageHandler.handleHelp(context, sender, reply)
         }
         if (context === null) {
           return MessageHandler.handleNoContext(sender, profile, message, reply)
@@ -46,10 +50,50 @@ class MessageHandler {
   // handleGetStarted
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `Hola ${profile.first_name}, let's get started!\n\nI speak lots of different languages, so go ahead and tell me what to translate for you.\n\nFor example, type "english to spanish" or "greek to japanese"`
+      text: `Hola ${profile.first_name}, let's get started!\n\nI speak lots of different languages, so go ahead and tell me what to translate for you.\n\nExample: "English to Spanish" or "Greek to Japanese"\n\nType "!help" at any time`
     }, () => {
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)  
+    })
+  }
+
+  // handleHelp
+  static handleHelp(context, sender, reply) {
+    let options = [
+      {
+        'type': 'postback',
+        'title': 'Show all languages',
+        'payload': '!list'
+      }
+    ]
+
+    if (context !== null) {
+      const switchedContext = switchContext(getContextFromCode(context))
+      options.push(
+        {
+          'type': 'postback',
+          'title': `${switchedContext.from} to ${switchedContext.to}`,
+          'payload': '!switch'
+        },
+        {
+          'type': 'postback',
+          'title': 'Change languages',
+          'payload': '!change'
+        }
+      )
+    }
+
+    return reply({
+      'attachment': {
+        'type': 'template',
+        'payload': {
+          'template_type': 'button',
+          'text': 'Hey there! Here are some helpful shortcuts:\n- "!change" to change languages\n- "!switch" to switch languages\n\n Or choose a command:\n\n',
+          'buttons': options
+        }
+      }
+    }, () => {
+      mixpanel.track('I ask for help', sender)
     })
   }
 
@@ -58,7 +102,7 @@ class MessageHandler {
     db.delAsync(sender.id).then((err) => {
       if (err) Logger.log(err)
       return reply({
-        text: 'Sure thing. What language you would like me to translate for you now?'
+        text: 'Sure thing. What language would you like me to translate for you now?\n\n Example: "English to German"'
       }, () => {
         mixpanel.track('I change context', sender)
       })
@@ -69,31 +113,25 @@ class MessageHandler {
   static handleSwitch(context, sender, message, reply) {
     if (context === null) {
       return reply({
-        text: `I don't know what languages I'm supposed to be translating for you.\n\nType, for example: "thai to french" or "russian to dutch"`
+        text: `Hmmm... I don't know what language I'm supposed to be translating for you.\n\nExample: "Thai to French" or "Russian to Dutch"`
       }) 
     }
-    const values = context.split(':')
-    const code = `${values[1]}:${values[0]}`
-    const from = _.capitalize(getLanguageName(values[1]))
-    const to = _.capitalize(getLanguageName(values[0]))
-    return MessageHandler.handleSetContext(code, from, to, sender, message, reply)
+    context = switchContext(getContextFromCode(context))
+    return MessageHandler.handleSetContext(context.code, context.from, context.to, sender, message, reply)
   }
 
   // handleNoContext 
   static handleNoContext(sender, profile, message, reply) {
-    const context = getContext(message.text)
+    const context = getContextFromMessage(message.text)
     if (context.hasTwo) {
-      const code = `${context.matches[0].code}:${context.matches[1].code}`
-      const from = _.capitalize(context.matches[0].name)
-      const to = _.capitalize(context.matches[1].name)
-      return MessageHandler.handleSetContext(code, from, to, sender, message, reply)
+      return MessageHandler.handleSetContext(context.code, context.from, context.to, sender, message, reply)
     }
     if (MessageHandler.handleGeneralResponse(sender, profile, message, reply) !== false) {
       return 
     }
     
-    let text = `Oops, I didn't quite catch that.\n\nType, for example: "english to spanish" or "korean to portugese"`
-    if (context.hasOne) text = `I only caught ${_.capitalize(context.matches[0].name)} there.\n\nType, for example: "english to spanish" or "korean to portugese"`
+    let text = `Oops, I didn't quite catch that.\n\nExample: "English to Spanish" or "Korean to Portugese"`
+    if (context.hasOne) text = `I only caught ${context.from} there. Please try again`
     return reply({
       text: text
     }, () => {
@@ -125,7 +163,7 @@ class MessageHandler {
     db.setAsync(sender.id, code).then((err) => {
       if (err) Logger.log(err)
       return reply({
-        text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.\n\n To change languages at anytime, type "${responseType.change}"`
+        text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.\n\nAsk for "!help" at any time`
       }, () => {
         mixpanel.track('I set context', sender, message)
       })
@@ -149,8 +187,37 @@ class MessageHandler {
 }
 
 // private methods
+// getContextFromMessage
+function getContextFromMessage(message) {
+  const ctxMatches = getContextMatches(message)
+  const { hasTwo, hasOne, hasNone } = ctxMatches
+  let code = null 
+  let from = null
+  let to = null
+
+  if (hasOne || hasTwo) {
+    from = _.capitalize(ctxMatches.matches[0].name)
+  }
+  if (hasTwo) {
+    code = `${ctxMatches.matches[0].code}:${ctxMatches.matches[1].code}`
+    to = _.capitalize(ctxMatches.matches[1].name)
+  }
+  return { code, from, to, hasTwo, hasOne, hasNone }
+}
+
+// getContextFromCode
+function getContextFromCode(code) {
+  const codes = code.split(':')
+  return {
+    code,
+    from: _.capitalize(getLanguageName(codes[0])),
+    to: _.capitalize(getLanguageName(codes[1])),
+    hasTwo: true
+  }
+}
+
 // getContext
-function getContext(message) {
+function getContextMatches(message) {
   let matches = []
   const words = message.split(' ')
   words.forEach((word) => {
@@ -165,6 +232,19 @@ function getContext(message) {
     hasNone: matches.length === 0,
     matches: matches
   }
+}
+
+// switchContext
+function switchContext(context) {
+  const values = context.code.split(':')
+  const from = context.to
+  const to = context.from
+
+  context.code = `${values[1]}:${values[0]}`
+  context.from = from
+  context.to = to
+
+  return context
 }
 
 // getRandom
