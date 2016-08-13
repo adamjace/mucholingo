@@ -103,7 +103,7 @@ class MessageHandler {
         'type': 'template',
         'payload': {
           'template_type': 'button',
-          'text': `Hey there! Here are some helpful shortcuts:\n\n- ${responseType.change} to change languages\n- ${responseType.switch} to switch languages\n\n Or choose a command:\n\n`,
+          'text': `Hey there! Here are some helpful shortcuts:\n\n"${responseType.change}" to change languages\n"${responseType.switch}" to switch languages\n\n Or choose a command:\n\n`,
           'buttons': options
         }
       }
