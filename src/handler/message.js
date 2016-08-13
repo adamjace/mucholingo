@@ -34,9 +34,9 @@ class MessageHandler {
           return MessageHandler.handleChange(sender, reply)
         }
         if (_.includes(message.text, responseType.switch)) {
-          return MessageHandler.handleSwitch(context, sender, message, reply)
+          return MessageHandler.handleSwitch(context, sender, reply)
         }
-        if (_.includes(message.text, responseType.help) || context === null && message.text === 'help') {
+        if (_.includes(message.text, responseType.help) || context === null && message.text.toLowerCase() === 'help') {
           return MessageHandler.handleHelp(context, sender, reply)
         }
         if (_.includes(message.text, responseType.list)) {
