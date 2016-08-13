@@ -9,9 +9,9 @@ const _ = require('lodash')
 
 const responseType = {
   getStarted: '!getstarted',
-  help: '!help',
-  change: '!change',
-  switch: '!switch'
+  help: '#help',
+  change: '#change',
+  switch: '#switch'
 }
 
 class MessageHandler {
@@ -26,16 +26,16 @@ class MessageHandler {
       if (err) return Logger.log(err)
 
       db.getAsync(sender.id).then((context) => {
-        if (postback && postback.payload === responseType.getStarted) {
-          return MessageHandler.handleGetStarted(sender, profile, reply)
+        if (postback && postback.payload) {
+          return MessageHandler.handlePostBack(context, postback, profile, sender, reply)
         }
-        if (postback && postback.payload === responseType.change || _.includes(message.text, responseType.change)) {
+        if (_.includes(message.text, responseType.change)) {
           return MessageHandler.handleChange(sender, reply)
         }
-        if (postback && postback.payload === responseType.switch || _.includes(message.text, responseType.switch)) {
+        if (_.includes(message.text, responseType.switch)) {
           return MessageHandler.handleSwitch(context, sender, message, reply)
         }
-        if (_.includes(message.text, responseType.help)) {
+        if (_.includes(message.text, responseType.help) || context === null && message.text === 'help') {
           return MessageHandler.handleHelp(context, sender, reply)
         }
         if (context === null) {
@@ -47,10 +47,24 @@ class MessageHandler {
     })
   }
 
+  // handlePostBack
+  static handlePostBack(context, postback, profile, sender, reply) {
+    if (postback.payload === responseType.getStarted) {
+      return MessageHandler.handleGetStarted(sender, profile, reply)
+    }
+    if (postback.payload === responseType.change) {
+      return MessageHandler.handleChange(sender, reply)
+    }
+    if (postback.payload === responseType.switch) {
+      return MessageHandler.handleSwitch(context, sender, reply)
+    }
+    return null
+  }
+
   // handleGetStarted
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `Hola ${profile.first_name}, let's get started!\n\nI speak lots of different languages, so go ahead and tell me what to translate for you.\n\nExample: "English to Spanish" or "Greek to Japanese"\n\nType "!help" at any time`
+      text: `Hola ${profile.first_name}, let's get started!\n\nI speak lots of different languages, so go ahead and tell me what to translate for you.\n\nExample: "English to Spanish" or "Greek to Japanese"\n\nAsk for #help at any time`
     }, () => {
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)  
@@ -88,7 +102,7 @@ class MessageHandler {
         'type': 'template',
         'payload': {
           'template_type': 'button',
-          'text': 'Hey there! Here are some helpful shortcuts:\n- "!change" to change languages\n- "!switch" to switch languages\n\n Or choose a command:\n\n',
+          'text': `Hey there! Here are some helpful shortcuts:\n\n- ${responseType.change} to change languages\n- ${responseType.switch} to switch languages\n\n Or choose a command:\n\n`,
           'buttons': options
         }
       }
@@ -110,14 +124,14 @@ class MessageHandler {
   }
 
   // handleSwitch
-  static handleSwitch(context, sender, message, reply) {
+  static handleSwitch(context, sender, reply) {
     if (context === null) {
       return reply({
         text: `Hmmm... I don't know what language I'm supposed to be translating for you.\n\nExample: "Thai to French" or "Russian to Dutch"`
       }) 
     }
     context = switchContext(getContextFromCode(context))
-    return MessageHandler.handleSetContext(context.code, context.from, context.to, sender, message, reply)
+    return MessageHandler.handleSetContext(context.code, context.from, context.to, sender, null, reply)
   }
 
   // handleNoContext 
@@ -130,7 +144,7 @@ class MessageHandler {
       return 
     }
     
-    let text = `Oops, I didn't quite catch that.\n\nExample: "English to Spanish" or "Korean to Portugese"`
+    let text = `Oops, I didn't quite catch that.\n\nSay something like "English to Spanish" or "Korean to Portugese"`
     if (context.hasOne) text = `I only caught ${context.from} there. Please try again`
     return reply({
       text: text
