@@ -44,6 +44,7 @@ class MessageHandler {
           return MessageHandler.handlePostBack(context, postback, profile, sender, reply)
         }
         // check for quick replies
+        Logger.log(JSON.stringify(message.quick_replies))
         if (message && message.quick_replies && message.quick_replies[0].payload) {
           return MessageHandler.handlePostBack(context, message.quick_replies[0], profile, sender, reply)
         }
