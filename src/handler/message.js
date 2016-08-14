@@ -32,7 +32,7 @@ class MessageHandler {
   // handleMessage is our main handler
   static handleMessage(bot, payload, reply) {
 
-    const { sender, message, postback } = payload
+    const { sender, message, postback, quick_reply } = payload
     bot.setTyping(sender.id, true)
     bot.getProfile(sender.id, (err, profile) => {
 
@@ -41,6 +41,9 @@ class MessageHandler {
       db.getAsync(sender.id).then((context) => {
         if (postback && postback.payload) {
           return MessageHandler.handlePostBack(context, postback, profile, sender, reply)
+        }
+        if (quick_reply && quick_reply.postback) {
+          return MessageHandler.handlePostBack(context, quick_reply.postback, profile, sender, reply)
         }
         if (_.includes(message.text.toLowerCase(), responseType.help) && context === null) {
           return MessageHandler.handleHelp(context, sender, reply)
