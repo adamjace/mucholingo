@@ -42,8 +42,8 @@ class MessageHandler {
         if (postback && postback.payload) {
           return MessageHandler.handlePostBack(context, postback, profile, sender, reply)
         }
-        if (quick_reply && quick_reply.postback) {
-          return MessageHandler.handlePostBack(context, quick_reply.postback, profile, sender, reply)
+        if (quick_reply && quick_reply.payload) {
+          return MessageHandler.handlePostBack(context, quick_reply, profile, sender, reply)
         }
         if (_.includes(message.text.toLowerCase(), responseType.help) && context === null) {
           return MessageHandler.handleHelp(context, sender, reply)
