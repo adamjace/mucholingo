@@ -8,9 +8,9 @@ const db = require('../db/redis')
 const _ = require('lodash')
 
 const responseType = {
-  help: 'help',
+  help: '#help',
   getStarted: '#getstarted',
-  change: '#change',
+  reset: '#reset',
   switch: '#switch',
   list: '#list'
 }
@@ -32,20 +32,22 @@ class MessageHandler {
   // handleMessage is our main handler
   static handleMessage(bot, payload, reply) {
 
-    const { sender, message, postback, quick_reply } = payload
+    const { sender, message, postback } = payload
     bot.setTyping(sender.id, true)
     bot.getProfile(sender.id, (err, profile) => {
 
       if (err) return Logger.log(err)
-
+      Logger.log(message.quick_replies[0].payload)
       db.getAsync(sender.id).then((context) => {
+        // check for postbacks
         if (postback && postback.payload) {
           return MessageHandler.handlePostBack(context, postback, profile, sender, reply)
         }
-        if (quick_reply && quick_reply.payload) {
-          return MessageHandler.handlePostBack(context, quick_reply, profile, sender, reply)
+        // check for quick replies
+        if (message && message.quick_replies && message.quick_replies[0].payload) {
+          return MessageHandler.handlePostBack(context, message.quick_replies[0], profile, sender, reply)
         }
-        if (_.includes(message.text.toLowerCase(), responseType.help) && context === null) {
+        if (_.includes(message.text.toLowerCase(), 'help') && context === null) {
           return MessageHandler.handleHelp(context, sender, reply)
         }
         if (context === null) {
@@ -65,8 +67,8 @@ class MessageHandler {
     if (postback.payload === responseType.help) {
       return MessageHandler.handleHelp(context, sender, reply)
     }
-    if (postback.payload === responseType.change) {
-      return MessageHandler.handleChange(sender, reply)
+    if (postback.payload === responseType.reset) {
+      return MessageHandler.handleReset(sender, reply)
     }
     if (postback.payload === responseType.switch) {
       return MessageHandler.handleSwitch(context, sender, reply)
@@ -88,7 +90,6 @@ class MessageHandler {
 
   // handleHelp
   static handleHelp(context, sender, reply) {
-    //let text = `Hey there! Here are some helpful shortcuts:\n\n"${responseType.change}" to change languages\n"${responseType.switch}" to switch languages\n\n Or choose a command:\n\n`
     let text = `Hey there! Tell me what languages to translate for you by saying something like ${getRandomExample()}`
     let options = [
       {
@@ -101,16 +102,16 @@ class MessageHandler {
     if (context !== null) {
       context = getContextFromCode(context)
       text = `I'm currently translating everything you say from ${context.from} to ${context.to}\n\n`
-      options.push(
+      options.unshift(
+        {
+          'type': 'postback',
+          'title': 'Reset',
+          'payload': responseType.reset
+        },
         {
           'type': 'postback',
           'title': `${context.to} to ${context.from}`,
           'payload': responseType.switch
-        },
-        {
-          'type': 'postback',
-          'title': 'Change languages',
-          'payload': responseType.change
         }
       )
     }
@@ -142,14 +143,14 @@ class MessageHandler {
     }) 
   }
 
-  // handleChange
-  static handleChange(sender, reply) {
+  // handleReset
+  static handleReset(sender, reply) {
     db.delAsync(sender.id).then((err) => {
       if (err) Logger.log(err)
       return reply({
         text: `OK, what language would you like me to translate for you now?\n\n Example: ${getRandomExample()}`
       }, () => {
-        mixpanel.track('I change context', sender)
+        mixpanel.track('I reset context', sender)
       })
     })
   }
