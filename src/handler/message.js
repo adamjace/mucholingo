@@ -38,13 +38,15 @@ class MessageHandler {
 
       if (err) return Logger.log(err)
 
+      // check for quick replies
+      Logger.log(JSON.stringify('MESSAGE --> ' + message))
+      Logger.log(JSON.stringify('POSTBACK --> ' + postback))
+
       db.getAsync(sender.id).then((context) => {
         // check for postbacks
         if (postback && postback.payload) {
           return MessageHandler.handlePostBack(context, postback, profile, sender, reply)
         }
-        // check for quick replies
-        Logger.log(JSON.stringify(message.quick_replies))
         if (message && message.quick_replies && message.quick_replies[0].payload) {
           return MessageHandler.handlePostBack(context, message.quick_replies[0], profile, sender, reply)
         }
