@@ -88,7 +88,7 @@ class MessageHandler {
 
   // handleHelp
   static handleHelp(context, sender, reply) {
-    let text = `Oh, hi there! I speak 90 different languages.\n\n So I can translate stuff for you, you'll need to start off by saying something like ${getRandomExample()}`
+    let text = `Oh, Hi there! I speak 90 different languages.\n\nSo I can translate stuff for you, you'll need to start off by saying something like ${getRandomExample()}`
     let options = [
       {
         'type': 'postback',
