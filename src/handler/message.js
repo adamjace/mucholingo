@@ -15,13 +15,12 @@ const responseType = {
   list: '#list'
 }
 
-const helpQuickReply = [
-  {
-    'content_type': 'text',
-    'title': 'Need help?',
-    'payload': '#help'
-  }
-]
+const helpQuickReply = {
+  'content_type': 'text',
+  'title': 'Need help?',
+  'payload': '#help'
+}
+
 
 const examples = [
   'English', 'German', 'Italian', 'Korean', 'Dutch', 'Polish', 'Hindi', 'Spanish', 'French', 'Indonesian', 'Russian', 'Chinese', 'Greek'
@@ -89,7 +88,7 @@ class MessageHandler {
 
   // handleHelp
   static handleHelp(context, sender, reply) {
-    let text = `Hey there! Tell me what languages to translate for you by saying something like ${getRandomExample()}`
+    let text = `Oh, hi there! I speak 90 different languages.\n\n So I can translate stuff for you, you'll need to start off by saying something like ${getRandomExample()}`
     let options = [
       {
         'type': 'postback',
@@ -100,7 +99,7 @@ class MessageHandler {
 
     if (context !== null) {
       context = getContextFromCode(context)
-      text = `I'm currently translating everything you say from ${context.from} to ${context.to}\n\n`
+      text = `Hello! Just to remind you I'm currently translating everything you say from ${context.from} to ${context.to}\n\n`
       options.unshift(
         {
           'type': 'postback',
@@ -156,11 +155,6 @@ class MessageHandler {
 
   // handleSwitch
   static handleSwitch(context, sender, reply) {
-    if (context === null) {
-      return reply({
-        text: `Hmmm... I don't know what language I'm supposed to be translating for you.\n\nExample: ${getRandomExample()}`
-      }) 
-    }
     context = switchContext(getContextFromCode(context))
     return MessageHandler.handleSetContext(context.code, context.from, context.to, sender, null, reply)
   }
@@ -176,7 +170,7 @@ class MessageHandler {
     }
     
     let text = `Oops, I didn't quite catch that.\n\n Ask me for "help" at anytime`
-    if (context.hasOne) text = `I only caught ${context.from} in there. Please try again, or ask me for "help"`
+    if (context.hasOne) text = `I only caught ${context.from} in there. Try again, or ask me for "help"`
     return reply({
       text: text
     }, () => {
@@ -223,7 +217,7 @@ class MessageHandler {
         response.text = result
         // check if the user actually wants help by passing a quick reply button with the translated text
         if (_.includes(message.text.toLowerCase(), 'help')) {
-          response.quick_replies = helpQuickReply
+          response.quick_replies = [helpQuickReply]
         }
         reply(response, (err) => {
           if (err) Logger.log(err)
