@@ -37,7 +37,7 @@ class MessageHandler {
     bot.getProfile(sender.id, (err, profile) => {
 
       if (err) return Logger.log(err)
-      Logger.log(message.quick_replies[0].payload)
+
       db.getAsync(sender.id).then((context) => {
         // check for postbacks
         if (postback && postback.payload) {
