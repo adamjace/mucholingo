@@ -161,7 +161,7 @@ class MessageHandler {
   // handleNoContext 
   static handleNoContext(sender, profile, message, reply) {
     const context = getContextFromMessage(message.text)
-    if (context.hasTwo) {
+    if (context.hasTwo && context.from !== context.to) {
       return MessageHandler.handleSetContext(context.code, context.from, context.to, sender, message, reply)
     }
     if (MessageHandler.handleGeneralResponse(sender, profile, message, reply) !== false) {
