@@ -22,7 +22,7 @@ const helpQuickReply = {
 }
 
 const examples = [
-  'English', 'German', 'Italian', 'Korean', 'Dutch', 'Polish', 'Hindi', 'Spanish', 'French', 'Indonesian', 'Russian', 'Chinese', 'Greek'
+  'English', 'German', 'Italian', 'Korean', 'Dutch', 'Japanese', 'Hindi', 'Spanish', 'French', 'Indonesian', 'Russian', 'Mandarin', 'Greek'
 ]
 
 class MessageHandler {
@@ -45,7 +45,7 @@ class MessageHandler {
           return MessageHandler.handlePostBack(context, message.quick_reply, profile, sender, reply)
         }
         if (_.includes(message.text.toLowerCase(), 'help') && context === null) {
-          return MessageHandler.handleHelp(context, sender, reply)
+          return MessageHandler.handleHelp(context, profile, sender, reply)
         }
         if (context === null) {
           return MessageHandler.handleNoContext(sender, profile, message, reply)
@@ -62,7 +62,7 @@ class MessageHandler {
       return MessageHandler.handleGetStarted(sender, profile, reply)
     }
     if (postback.payload === responseType.help) {
-      return MessageHandler.handleHelp(context, sender, reply)
+      return MessageHandler.handleHelp(context, profile, sender, reply)
     }
     if (postback.payload === responseType.reset) {
       return MessageHandler.handleReset(sender, reply)
@@ -78,7 +78,7 @@ class MessageHandler {
   // handleGetStarted
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `Hola ${profile.first_name}, let's get started! I speak 90 different languages, so go ahead and tell me what to translate for you.\n\nExample: ${getRandomExample()}\n\nAsk me for "help" at any time`
+      text: `Hola ${profile.first_name}, let's get started! I speak 90 different languages, so go ahead and tell me what to translate for you.\n\nExample: ${getSmartExample(profile)}\n\nAsk me for "help" at any time`
     }, () => {
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)  
@@ -86,8 +86,8 @@ class MessageHandler {
   }
 
   // handleHelp
-  static handleHelp(context, sender, reply) {
-    let text = `Hola. I see you've asked for some help... Why don't you start by telling me what languages to translate for you.\n\nExample: ${getRandomExample()}`
+  static handleHelp(context, profile, sender, reply) {
+    let text = `Hola. I see you've asked for some help... Why don't you start by telling me what languages to translate for you.\n\nExample: ${getSmartExample(profile)}`
     let options = [
       {
         'type': 'postback',
@@ -145,7 +145,7 @@ class MessageHandler {
     db.delAsync(sender.id).then((err) => {
       if (err) Logger.log(err)
       return reply({
-        text: `OK, what should I translate for you next?`
+        text: 'OK, what should I translate for you next?'
       }, () => {
         mixpanel.track('I reset context', sender)
       })
@@ -306,9 +306,9 @@ function getAllLanguageNames() {
 
 // getLanguageNameLocale
 function getLanguageNameLocale(profile) {
-  if (!profile.locale || profile.locale.indexOf('_') === -1) return null
+  if (!profile.locale && profile.locale.indexOf('_') === -1) return ''
   const code = profile.locale.split('_')[0]
-  return getLanguageName(code)
+  return _.capitalize(getLanguageName(code))
 }
 
 // getRandom
@@ -316,10 +316,14 @@ function getRandom(responses) {
   return responses[Math.floor(Math.random()*responses.length)]
 }
 
-// getRandomExample
-function getRandomExample() {
-  const shuffled = shuffleArray(examples)
-  return `"${shuffled[0]} to ${shuffled[1]}"`
+// getSmartExample
+function getSmartExample(profile) {
+  const locale = getLanguageNameLocale(profile)
+  let shuffled = shuffleArray(_.clone(examples))
+  if (locale === '') return `"${shuffled[0]} to ${shuffled[1]}"`
+  
+  shuffled = _.remove(shuffled, (n) => { return n !== locale })
+  return `"${locale}" to "${shuffled[0]}"` 
 }
 
 // shuffleArray
