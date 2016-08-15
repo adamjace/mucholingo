@@ -54,10 +54,6 @@ const languages = [
     code: 'ny'
   },
   {  
-    name: 'chinese',
-    code: 'zh-TW'
-  },
-  {  
     name: 'croatian',
     code: 'hr'
   },
@@ -220,6 +216,10 @@ const languages = [
   {  
     name: 'maltese',
     code: 'mt'
+  },
+  {  
+    name: 'mandarin',
+    code: 'zh-CN'
   },
   {  
     name: 'maori',
