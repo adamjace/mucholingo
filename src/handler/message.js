@@ -87,7 +87,7 @@ class MessageHandler {
 
   // handleHelp
   static handleHelp(context, sender, reply) {
-    let text = `Hi there. I see you've asked for some help.\n\nI'm your personal translator bot and I speak 90 different languages! Why don't you start by telling me what to translate for you.\n\nExample: ${getRandomExample()}`
+    let text = `Hi there. I see you've asked for some help...\n\nI'm your personal translator bot and I speak 90 different languages! Why don't you start by telling me what to translate for you.\n\nExample: ${getRandomExample()}`
     let options = [
       {
         'type': 'postback',
@@ -98,7 +98,7 @@ class MessageHandler {
 
     if (context !== null) {
       context = getContextFromCode(context)
-      text = `Hello again. I see you've asked for some help.\n\nI'm currently translating everything you say from ${context.from} to ${context.to}\n\n`
+      text = `Hello again. I see you've asked for some help...\n\nI'm currently translating everything you say from ${context.from} to ${context.to}\n\n`
       options.unshift(
         {
           'type': 'postback',
