@@ -145,7 +145,7 @@ class MessageHandler {
     db.delAsync(sender.id).then((err) => {
       if (err) Logger.log(err)
       return reply({
-        text: `OK, what language would you like me to translate for you now?\n\n Example: ${getRandomExample()}`
+        text: `OK, what should I translate for you next?`
       }, () => {
         mixpanel.track('I reset context', sender)
       })
