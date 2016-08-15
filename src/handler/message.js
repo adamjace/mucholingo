@@ -21,7 +21,6 @@ const helpQuickReply = {
   'payload': '#help'
 }
 
-
 const examples = [
   'English', 'German', 'Italian', 'Korean', 'Dutch', 'Polish', 'Hindi', 'Spanish', 'French', 'Indonesian', 'Russian', 'Chinese', 'Greek'
 ]
@@ -88,7 +87,7 @@ class MessageHandler {
 
   // handleHelp
   static handleHelp(context, sender, reply) {
-    let text = `Hi there. I speak 90 different languages.\n\nSo I can translate stuff for you, you'll need to start off by saying something like ${getRandomExample()}`
+    let text = `Hi there. I see you've asked for some help. I'm a translator bot and I can speak 90 different languages.\n\nSo I can translate stuff for you, you'll need to start off by saying something like ${getRandomExample()}`
     let options = [
       {
         'type': 'postback',
@@ -99,7 +98,7 @@ class MessageHandler {
 
     if (context !== null) {
       context = getContextFromCode(context)
-      text = `Hello! Just to remind you I'm currently translating everything you say from ${context.from} to ${context.to}\n\n`
+      text = `Hello again. I see you've asked for some help.\n\nI'm currently translating everything you say from ${context.from} to ${context.to}\n\n`
       options.unshift(
         {
           'type': 'postback',
@@ -303,6 +302,13 @@ function getAllLanguageNames() {
     list.push(_.capitalize(lang.name))
   })
   return list
+}
+
+// getLanguageNameLocale
+function getLanguageNameLocale(profile) {
+  if (!profile.locale || profile.locale.indexOf('_') === -1) return null
+  const code = profile.locale.split('_')[0]
+  return getLanguageName(code)
 }
 
 // getRandom
