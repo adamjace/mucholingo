@@ -11,6 +11,7 @@ class Translator {
     const source = arr[0]
     const target = arr[1]
     return new Promise((resolve, reject) => {
+      if (!googleTranslate || !googleTranslate.translate) reject(null)
       googleTranslate.translate(message, source, target, (err, translation) => {
         if (err) return reject(err)
         resolve(translation.translatedText)

@@ -1,5 +1,6 @@
 'use strict'
 
+const Promise = require('bluebird')
 const t = require('../lib/translator')
 const Logger = require('../lib/logger')
 const languages = require('../lib/lang')
@@ -30,28 +31,32 @@ class MessageHandler {
   // handleMessage is our main handler
   static handleMessage(bot, payload, reply) {
 
-    const { sender, message, postback } = payload
-    bot.setTyping(sender.id, true)
-    bot.getProfile(sender.id, (err, profile) => {
+    return new Promise(function(resolve) {
 
-      if (err) return Logger.log(err)
+      const { sender, message, postback } = payload
 
-      db.getAsync(sender.id).then((context) => {
-        // check for postbacks
-        if (postback && postback.payload) {
-          return MessageHandler.handlePostBack(context, postback, profile, sender, reply)
-        }
-        if (message && message.quick_reply && message.quick_reply.payload) {
-          return MessageHandler.handlePostBack(context, message.quick_reply, profile, sender, reply)
-        }
-        if (_.includes(message.text.toLowerCase(), 'help') && context === null) {
-          return MessageHandler.handleHelp(context, profile, sender, reply)
-        }
-        if (context === null) {
-          return MessageHandler.handleNoContext(sender, profile, message, reply)
-        }
-        // we made it! translate the message
-        MessageHandler.handleTranslation(context, sender, message, reply) 
+      bot.setTyping(sender.id, true)
+      bot.getProfile(sender.id, (err, profile) => {
+        
+        if (err) return Logger.log(err)
+
+        db.getAsync(sender.id).then((context) => {
+          // check for postbacks
+          if (postback && postback.payload) {
+            return resolve(MessageHandler.handlePostBack(context, postback, profile, sender, reply))
+          }
+          if (message && message.quick_reply && message.quick_reply.payload) {
+            return resolve(MessageHandler.handlePostBack(context, message.quick_reply, profile, sender, reply))
+          }
+          if (_.includes(message.text.toLowerCase(), 'help') && context === null) {
+            return resolve(MessageHandler.handleHelp(context, profile, sender, reply))
+          }
+          if (context === null) {
+            return resolve(MessageHandler.handleNoContext(sender, profile, message, reply))
+          }
+          // we made it! translate the message
+          return resolve(MessageHandler.handleTranslation(context, sender, message, reply))
+        })
       })
     })
   }
@@ -78,7 +83,7 @@ class MessageHandler {
   // handleGetStarted
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `Hola ${profile.first_name}, let's get started! I speak 90 different languages, so go ahead and tell me what to translate for you.\n\nExample: ${getSmartExample(profile)}\n\nAsk me for "help" at any time`
+      text: `Hola ${profile && profile.first_name}, let's get started! I speak 90 different languages, so go ahead and tell me what to translate for you.\n\nExample: ${getSmartExample(profile)}\n\nAsk me for "help" at any time`
     }, () => {
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)  
@@ -228,6 +233,20 @@ class MessageHandler {
         reply({ text: 'Oh no, something has gone wrong. Please try that again' })
       })
   }
+
+  // _privates
+  // expose these for unit testing
+  static _privates() {
+    return {
+      getContextFromMessage: getContextFromMessage,
+      getContextFromCode: getContextFromCode,
+      switchContext: switchContext,
+      getLanguageName: getLanguageName,
+      getAllLanguageNames: getAllLanguageNames,
+      getLanguageNameLocale: getLanguageNameLocale,
+      getSmartExample: getSmartExample
+    }
+  }
 }
 
 // private methods
@@ -251,8 +270,8 @@ function getContextFromCode(code) {
   const codes = code.split(':')
   return {
     code,
-    from: _.capitalize(getLanguageName(codes[0])),
-    to: _.capitalize(getLanguageName(codes[1])),
+    from: getLanguageName(codes[0]),
+    to: getLanguageName(codes[1]),
     hasTwo: true
   }
 }
@@ -290,9 +309,10 @@ function switchContext(context) {
 
 // getLanguageName
 function getLanguageName(code) {
-  return languages.filter(item => item.code === code).map((lang) => {
+  const name = languages.filter(item => item.code === code).map((lang) => {
     return lang.name
   })
+  if (name && name.length) return _.capitalize(name[0])
 }
 
 // listAllLanguages
@@ -306,9 +326,9 @@ function getAllLanguageNames() {
 
 // getLanguageNameLocale
 function getLanguageNameLocale(profile) {
-  if (!profile.locale && profile.locale.indexOf('_') === -1) return ''
+  if (profile && !profile.locale && profile.locale.indexOf('_') === -1) return ''
   const code = profile.locale.split('_')[0]
-  return _.capitalize(getLanguageName(code))
+  return getLanguageName(code)
 }
 
 // getRandom
