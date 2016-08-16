@@ -243,8 +243,7 @@ class MessageHandler {
       switchContext: switchContext,
       getLanguageName: getLanguageName,
       getAllLanguageNames: getAllLanguageNames,
-      getLanguageNameLocale: getLanguageNameLocale,
-      getSmartExample: getSmartExample
+      getLanguageNameLocale: getLanguageNameLocale
     }
   }
 }
