@@ -5,8 +5,9 @@
   "main": "app.js",
   "scripts": {
     "start": "./start.sh",
-    "dev": "node src/app.js",
-    "lint": "eslint ./src --ext .js"
+    "dev": "sudo node src/app.js",
+    "lint": "eslint ./src --ext .js",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
