@@ -83,7 +83,7 @@ class MessageHandler {
   // handleGetStarted
   static handleGetStarted(sender, profile, reply) {
     reply({
-      text: `Hola ${profile && profile.first_name}, let's get started! I speak 90 different languages, so go ahead and tell me what to translate for you.\n\nExample: ${getSmartExample(profile)}\n\nAsk me for "help" at any time`
+      text: `¡Hola ${profile && profile.first_name}! Set my translation mode by saying something like ${getSmartExample(profile)}\n\nAsk me for "help" at any time`
     }, () => {
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)  
