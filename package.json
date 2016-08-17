@@ -7,7 +7,7 @@
     "start": "./start.sh",
     "dev": "sudo node src/app.js",
     "lint": "eslint ./src --ext .js",
-    "test": "jest"
+    "test": "jest --no-cache || true"
   },
   "author": "",
   "license": "ISC",
