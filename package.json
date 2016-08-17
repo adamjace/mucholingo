@@ -22,7 +22,12 @@
     "redis": "^2.6.2"
   },
   "devDependencies": {
+    "bluebird": "^3.4.1",
     "eslint": "^3.3.1",
-    "jest-cli": "^14.1.0"
+    "google-translate": "^1.0.6",
+    "jest-cli": "^14.1.0",
+    "lodash": "^4.15.0",
+    "mixpanel": "^0.4.0",
+    "redis": "^2.6.2"
   }
 }
