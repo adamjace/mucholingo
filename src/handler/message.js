@@ -92,7 +92,7 @@ class MessageHandler {
 
   // handleHelp
   static handleHelp(context, profile, sender, reply) {
-    let text = `Hola. I see you've asked for some help... Set my translation mode by saying something like ${getSmartExample(profile)}`
+    let text = `Hola. I see you've asked for some help... \n\nSet my translation mode by saying something like ${getSmartExample(profile)}`
     let options = [
       {
         'type': 'postback',
