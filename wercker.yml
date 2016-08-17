@@ -23,9 +23,9 @@ build:
   # http://devcenter.wercker.com/docs/steps/index.html
   steps:
     # A step that executes `npm install` command
-    #- npm-install
+    - npm-install
     # A step that executes `npm test` command
     #- npm-test
     - script:
-            name: deploy
-            code: jest
+            name: lint
+            code: npm run lint
