@@ -173,7 +173,7 @@ class MessageHandler {
       return 
     }
     
-    let text = `Oops, I didn't quite catch that.\n\n Ask me for "help" at anytime`
+    let text = 'Oops, I didn\'t quite catch that. Ask me for "help" at anytime'
     if (context.hasOne) text = `I only caught ${context.from} in there. Try again, or ask me for "help"`
     return reply({
       text: text
@@ -198,6 +198,9 @@ class MessageHandler {
         mixpanel.track('I say hello without context', sender, message)
       })
     }
+    if (_.includes(message.text.toLowerCase(), 'hmm')) {
+      return reply({ text: 'hmmmm...' })
+    }
     return false
   }
 
@@ -206,7 +209,7 @@ class MessageHandler {
     db.setAsync(sender.id, code).then((err) => {
       if (err) Logger.log(err)
       return reply({
-        text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.\n\nAsk for "help" at any time`
+        text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.`
       }, () => {
         mixpanel.track('I set context', sender, message)
       })
