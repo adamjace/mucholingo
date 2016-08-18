@@ -51,6 +51,9 @@ class MessageHandler {
           if (_.includes(message.text.toLowerCase(), 'help') && context === null) {
             return resolve(MessageHandler.handleHelp(context, profile, sender, reply))
           }
+          if (message.text === responseType.reset || message.text === responseType.switch) {
+            return resolve(MessageHandler.handlePostBack(context, {payload: message.text}, profile, sender, reply))
+          }
           if (context === null) {
             return resolve(MessageHandler.handleNoContext(sender, profile, message, reply))
           }
