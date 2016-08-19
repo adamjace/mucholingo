@@ -35,7 +35,6 @@ class MessageHandler {
 
       const { sender, message, postback } = payload
 
-      bot.setTyping(sender.id, true)
       bot.getProfile(sender.id, (err, profile) => {
         
         if (err) return Logger.log(err)
@@ -43,11 +42,18 @@ class MessageHandler {
         db.getAsync(sender.id).then((context) => {
           // check for postbacks
           if (postback && postback.payload) {
+            bot.setTyping(sender.id, true)
             return resolve(MessageHandler.handlePostBack(context, postback, profile, sender, reply))
           }
           if (message && message.quick_reply && message.quick_reply.payload) {
+            bot.setTyping(sender.id, true)
             return resolve(MessageHandler.handlePostBack(context, message.quick_reply, profile, sender, reply))
           }
+
+          // not a postback and not a text message, return
+          if (!message.text) return resolve(false)
+          
+          bot.setTyping(sender.id, true)
           if (_.includes(message.text.toLowerCase(), 'help') && context === null) {
             return resolve(MessageHandler.handleHelp(context, profile, sender, reply))
           }
