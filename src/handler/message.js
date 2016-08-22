@@ -45,6 +45,7 @@ class MessageHandler {
             bot.setTyping(sender.id, true)
             return resolve(MessageHandler.handlePostBack(context, postback, profile, sender, reply))
           }
+          // check if a quick reply (comes in as a message)
           if (message && message.quick_reply && message.quick_reply.payload) {
             bot.setTyping(sender.id, true)
             return resolve(MessageHandler.handlePostBack(context, message.quick_reply, profile, sender, reply))
@@ -53,6 +54,7 @@ class MessageHandler {
           // not a postback and not a text message, return
           if (!message.text) return resolve(false)
           
+          // show typing action
           bot.setTyping(sender.id, true)
           if (_.includes(message.text.toLowerCase(), 'help') && context === null) {
             return resolve(MessageHandler.handleHelp(context, profile, sender, reply))
@@ -63,6 +65,15 @@ class MessageHandler {
           if (context === null) {
             return resolve(MessageHandler.handleNoContext(sender, profile, message, reply))
           }
+          
+          // we have context and the user has sent a text message, before translation check if this is
+          // a possible change command: {lang} to {lang}
+          if (isPossibleChangeCommand(message.text)) {
+            const context = getContextFromMessage(message.text, true)
+            if (context.hasTwo) {
+              return (resolve(MessageHandler.handleSetContext(context.code, context.from, context.to, sender, null, reply)))
+            }
+          } 
           // we made it! translate the message
           return resolve(MessageHandler.handleTranslation(context, sender, message, reply))
         })
@@ -262,8 +273,8 @@ class MessageHandler {
 
 // private methods
 // getContextFromMessage
-function getContextFromMessage(message) {
-  const ctxMatches = getContextMatches(message)
+function getContextFromMessage(message, strict) {
+  const ctxMatches = getContextMatches(message, strict)
   const { hasTwo, hasOne, hasNone } = ctxMatches
   let code, from, to
   if (hasOne || hasTwo) {
@@ -288,15 +299,17 @@ function getContextFromCode(code) {
 }
 
 // getContext
-function getContextMatches(message) {
+function getContextMatches(message, strict) {
   let matches = []
   const words = message.split(' ')
-  words.forEach((word) => {
-    languages.filter(item => item.name === _.lowerCase(word)).map((lang) => {
-      if (matches.length === 2) return
-      matches.push(lang)
+  if (!strict || (strict && words.length === 3)) {
+    words.forEach((word) => {
+      languages.filter(item => item.name === _.lowerCase(word)).map((lang) => {
+        if (matches.length === 2) return
+        matches.push(lang)
+      })
     })
-  })
+  }
   return {
     hasTwo: matches.length === 2,
     hasOne: matches.length === 1,
@@ -366,6 +379,12 @@ function shuffleArray(array) {
     array[j] = temp
   }
   return array
+}
+
+// isPossibleChangeCommand
+function isPossibleChangeCommand(message) {
+  const words = message.split(' ')
+  return words.length === 3 && words[1] === 'to'
 }
 
 module.exports = MessageHandler

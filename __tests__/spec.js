@@ -115,6 +115,18 @@ describe('Bot unit tests', function() {
       })
     });
 
+    it('should call handleSetContext from a change command', function(done) {
+      payload.message.text = 'french to dutch'
+      payload.sender.id = userId
+      spyOn(MessageHandler, 'handleSetContext')
+      spyOn(MessageHandler, 'handleTranslation')
+      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+        expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
+        expect(MessageHandler.handleSetContext).toHaveBeenCalled()
+        done()
+      })
+    });
+
   });
 
   describe('Postback handlers', function() {
@@ -187,14 +199,34 @@ describe('Bot unit tests', function() {
 
   describe('test private methods', function() {
 
-    it('should get context from message', function() {
-      let context = privates.getContextFromMessage('english to spanish')
+    it('should get context from message without strict matching', function() {
+      let context = privates.getContextFromMessage('translate from english to spanish please')
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('English')
       expect(context.to).toEqual('Spanish')
       expect(context.hasTwo).toEqual(true)
       expect(context.hasOne).toEqual(false)
       expect(context.hasNone).toEqual(false)
+    });
+
+    it('should get context from message with strict matching', function() {
+      let context = privates.getContextFromMessage('english to spanish', true)
+      expect(context.code).toEqual('en:es')
+      expect(context.from).toEqual('English')
+      expect(context.to).toEqual('Spanish')
+      expect(context.hasTwo).toEqual(true)
+      expect(context.hasOne).toEqual(false)
+      expect(context.hasNone).toEqual(false)
+    });
+
+    it('should NOT get context from message with strict matching', function() {
+      let context = privates.getContextFromMessage('translate from english to spanish please', true)
+      expect(context.code).toEqual(undefined)
+      expect(context.from).toEqual(undefined)
+      expect(context.to).toEqual(undefined)
+      expect(context.hasTwo).toEqual(false)
+      expect(context.hasOne).toEqual(false)
+      expect(context.hasNone).toEqual(true)
     });
 
     it('should part get context from message', function() {
