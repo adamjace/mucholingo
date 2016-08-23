@@ -8,6 +8,8 @@ const mixpanel = require('../lib/mixpanel')
 const db = require('../db/redis')
 const _ = require('lodash')
 
+const maxTextReplyLength = 320
+
 const responseType = {
   help: '#help',
   getStarted: '#getstarted',
@@ -36,7 +38,7 @@ class MessageHandler {
       const { sender, message, postback } = payload
 
       bot.getProfile(sender.id, (err, profile) => {
-        
+
         if (err) return Logger.log(err)
 
         db.getAsync(sender.id).then((context) => {
@@ -53,7 +55,7 @@ class MessageHandler {
 
           // not a postback and not a text message, return
           if (!message.text) return resolve(false)
-          
+
           // show typing action
           bot.setTyping(sender.id, true)
           if (_.includes(message.text.toLowerCase(), 'help') && context === null) {
@@ -65,7 +67,7 @@ class MessageHandler {
           if (context === null) {
             return resolve(MessageHandler.handleNoContext(sender, profile, message, reply))
           }
-          
+
           // we have context and the user has sent a text message, before translation check if this is
           // a possible change command: {lang} to {lang}
           if (isPossibleChangeCommand(message.text)) {
@@ -73,7 +75,7 @@ class MessageHandler {
             if (context.hasTwo) {
               return (resolve(MessageHandler.handleSetContext(context.code, context.from, context.to, sender, null, reply)))
             }
-          } 
+          }
           // we made it! translate the message
           return resolve(MessageHandler.handleTranslation(context, sender, message, reply))
         })
@@ -106,7 +108,7 @@ class MessageHandler {
       text: `Hola ${profile && profile.first_name}! Start by telling me what languages to translate for you. Say something like ${getSmartExample(profile)}\n\nAsk me for "help" at any time`
     }, () => {
       mixpanel.setPerson(sender, profile)
-      mixpanel.track('I click to get started', sender)  
+      mixpanel.track('I click to get started', sender)
     })
   }
 
@@ -153,7 +155,7 @@ class MessageHandler {
   }
 
   // handleShowAllLanguages
-  // due to FBs payload size limit we need to chunk the list into seprate bits 
+  // due to FBs payload size limit we need to chunk the list into seprate bits
   static handleShowAllLanguages(sender, reply) {
     const list = getAllLanguageNames()
     const first = list.splice(0, list.length / 3)
@@ -161,8 +163,8 @@ class MessageHandler {
     reply({text: `OK, here goes...\n\n${first.toString().replace(/,/g, ', ')}`}, () => {
       reply({text: `${second.toString().replace(/,/g, ', ')}`}, () => {
         reply({text: `${list.toString().replace(/,/g, ', ')}\n\n *GASP*`})
-      }) 
-    }) 
+      })
+    })
   }
 
   // handleReset
@@ -183,16 +185,16 @@ class MessageHandler {
     return MessageHandler.handleSetContext(context.code, context.from, context.to, sender, null, reply)
   }
 
-  // handleNoContext 
+  // handleNoContext
   static handleNoContext(sender, profile, message, reply) {
     const context = getContextFromMessage(message.text)
     if (context.hasTwo && context.from !== context.to) {
       return MessageHandler.handleSetContext(context.code, context.from, context.to, sender, message, reply)
     }
     if (MessageHandler.handleGeneralResponse(sender, profile, message, reply) !== false) {
-      return 
+      return
     }
-    
+
     let text = 'Oops, I didn\'t quite catch that. Ask me for "help" at anytime'
     if (context.hasOne) text = `I only caught ${context.from} in there. Try again, or ask me for "help"`
     return reply({
@@ -241,6 +243,9 @@ class MessageHandler {
     let response = {}
     t.translate(message.text, context).
       then((result) => {
+        if (result.length > maxTextReplyLength) {
+          return reply({text: 'I\'m sorry, I can\'t translate all of that in one go. Try again with a smaller message'})
+        }
         response.text = result
         // check if the user actually wants help by passing a quick reply button with the translated text
         if (_.includes(message.text.toLowerCase(), 'help')) {
@@ -367,7 +372,7 @@ function getSmartExample(profile) {
   if (locale === '') return `"${shuffled[0]} to ${shuffled[1]}"`
 
   shuffled = _.remove(shuffled, (n) => { return n !== locale })
-  return `"${locale} to ${shuffled[0]}"` 
+  return `"${locale} to ${shuffled[0]}"`
 }
 
 // shuffleArray
