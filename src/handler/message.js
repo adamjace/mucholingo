@@ -171,7 +171,7 @@ class MessageHandler {
 
   // handleReset
   static handleReset(sender, reply) {
-    db.setAsync(sender.id, null).then((err) => {
+    db.delAsync(sender.id).then((err) => {
       if (err) Logger.log(err)
       return reply({
         text: 'OK, what should I translate for you next?'
