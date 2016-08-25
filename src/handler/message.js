@@ -38,7 +38,7 @@ class MessageHandler {
       const { sender, message, postback } = payload
 
       bot.getProfile(sender.id, (err, profile) => {
-        if (err) return Logger.log('getprofileError: ' + err)
+        if (err) return Logger.log('getProfileError: ' + JSON.stringify(err))
 
         db.getAsync(sender.id).then((context) => {
           // check for postbacks
