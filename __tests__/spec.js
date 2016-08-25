@@ -24,11 +24,11 @@ const profile = {
   locale: 'en_AU'
 }
 
-const bot = { 
-  setTyping: () => {}, 
+const bot = {
+  setTyping: () => {},
   getProfile: function(id, cb) {
-    cb(null, profile) 
-  } 
+    cb(null, profile)
+  }
 }
 
 describe('Bot unit tests', function() {
@@ -269,7 +269,7 @@ describe('Bot unit tests', function() {
       expect(privates.getLanguageName('en')).toEqual('English')
       expect(privates.getLanguageName('es')).toEqual('Spanish')
       expect(privates.getLanguageName('el')).toEqual('Greek')
-      expect(privates.getLanguageName('zh-CN')).toEqual('Mandarin')
+      expect(privates.getLanguageName('zh-CN')).toEqual('Chinese')
     })
 
     it('should get language name from locale', function() {

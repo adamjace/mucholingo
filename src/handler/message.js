@@ -61,15 +61,17 @@ class MessageHandler {
           if (_.includes(message.text.toLowerCase(), 'help') && context === null) {
             return resolve(MessageHandler.handleHelp(context, profile, sender, reply))
           }
+          // reset or switch command
           if (message.text === responseType.reset || message.text === responseType.switch) {
             return resolve(MessageHandler.handlePostBack(context, {payload: message.text}, profile, sender, reply))
           }
+          // no context
           if (context === null) {
             return resolve(MessageHandler.handleNoContext(sender, profile, message, reply))
           }
 
           // we have context and the user has sent a text message, before translation check if this is
-          // a possible change command: {lang} to {lang}
+          // a possible direct change command: {lang} to {lang}
           if (isPossibleChangeCommand(message.text)) {
             const context = getContextFromMessage(message.text, true)
             if (context.hasTwo) {
