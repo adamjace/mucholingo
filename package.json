@@ -4,7 +4,9 @@
   "description": "Translator bot for FB Messenger",
   "main": "app.js",
   "scripts": {
-    "start": "./start.sh",
+    "start": "sudo forever start -v --minUptime=5000 src/app.js",
+    "stop": "sudo forever stop src/app.js",
+    "restart": "sudo forever restart -v --minUptime=5000 src/app.js",
     "dev": "sudo node src/app.js",
     "lint": "eslint ./src --ext .js",
     "test": "jest --no-cache || true"
