@@ -7,6 +7,7 @@ const languages = require('../lib/lang')
 const mixpanel = require('../lib/mixpanel')
 const db = require('../db/redis')
 const _ = require('lodash')
+const config = require('../config')
 
 const maxTextReplyLength = 320
 
@@ -33,9 +34,12 @@ class MessageHandler {
   // handleMessage is our main handler
   static handleMessage(bot, payload, reply) {
 
-    return new Promise(function(resolve) {
+    const { sender, message, postback } = payload
 
-      const { sender, message, postback } = payload
+    // we don't care about handling our own responses
+    if (sender.id === config.fb_page_id) return
+
+    return new Promise(function(resolve) {
 
       bot.getProfile(sender.id, (err, profile) => {
         if (err) return Logger.log('getProfileError: ' + JSON.stringify(err))
