@@ -36,9 +36,8 @@ class MessageHandler {
     return new Promise(function(resolve) {
 
       const { sender, message, postback } = payload
-      Logger.log('Received...')
+
       bot.getProfile(sender.id, (err, profile) => {
-        Logger.log(`Sender name: ${profile.first_name}`)
         if (err) return Logger.log(err)
 
         db.getAsync(sender.id).then((context) => {
