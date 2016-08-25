@@ -38,7 +38,7 @@ class MessageHandler {
       const { sender, message, postback } = payload
 
       bot.getProfile(sender.id, (err, profile) => {
-        if (err) return Logger.log(err)
+        if (err) return Logger.log('getprofileError: ' + err)
 
         db.getAsync(sender.id).then((context) => {
           // check for postbacks
@@ -86,6 +86,7 @@ class MessageHandler {
 
   // handlePostBack
   static handlePostBack(context, postback, profile, sender, reply) {
+    Logger.log('handlePostBack')
     if (postback.payload === responseType.getStarted) {
       return MessageHandler.handleGetStarted(sender, profile, reply)
     }
@@ -105,6 +106,7 @@ class MessageHandler {
 
   // handleGetStarted
   static handleGetStarted(sender, profile, reply) {
+    Logger.log('handleGetStarted')
     reply({
       text: `Hola ${profile && profile.first_name}! Start by telling me what languages to translate for you. Say something like ${getSmartExample(profile)}\n\nAsk me for "help" at any time`
     }, () => {
@@ -115,6 +117,7 @@ class MessageHandler {
 
   // handleHelp
   static handleHelp(context, profile, sender, reply) {
+    Logger.log('handleHelp')
     let text = `Hola. I see you've asked for some help... \n\nTell me what languages to translate by saying something like ${getSmartExample(profile)}`
     let options = [
       {
@@ -188,6 +191,7 @@ class MessageHandler {
 
   // handleNoContext
   static handleNoContext(sender, profile, message, reply) {
+    Logger.log('handleNoContext')
     const context = getContextFromMessage(message.text)
     if (context.hasTwo && context.from !== context.to) {
       return MessageHandler.handleSetContext(context.code, context.from, context.to, sender, message, reply)
@@ -229,6 +233,7 @@ class MessageHandler {
 
   // handleSetContext
   static handleSetContext(code, from, to, sender, message, reply) {
+    Logger.log('handleSetContext')
     db.setAsync(sender.id, code).then((err) => {
       if (err) Logger.log(err)
       return reply({

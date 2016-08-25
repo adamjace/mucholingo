@@ -12,7 +12,7 @@ const client = redis.createClient(config.redis_port, config.redis_host, { no_rea
 client.auth(config.redis_password)
 
 client.on('error', (err) => {
-  Logger.log(err)
+  Logger.log('redis error: ' + err)
 })
 
 module.exports = client
