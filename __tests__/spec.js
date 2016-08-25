@@ -31,9 +31,9 @@ const bot = {
   }
 }
 
-describe('Bot unit tests', function() {
+describe('Bot tests', function() {
 
-  describe('DB test', function() {
+  describe('DB integration test', function() {
     it('should set and get context from the db', function(done) {
       const testValue = 'test_value'
       db.setAsync(userId, testValue).then((context) => {
