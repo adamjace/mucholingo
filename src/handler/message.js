@@ -9,6 +9,7 @@ const db = require('../db/redis')
 const _ = require('lodash')
 const config = require('../config')
 
+const cache = {}
 const maxTextReplyLength = 320
 
 const responseType = {
@@ -26,7 +27,7 @@ const helpQuickReply = {
 }
 
 const examples = [
-  'English', 'German', 'Italian', 'Korean', 'Dutch', 'Japanese', 'Hindi', 'Spanish', 'French', 'Indonesian', 'Russian', 'Mandarin', 'Greek'
+  'English', 'German', 'Italian', 'Korean', 'Dutch', 'Japanese', 'Hindi', 'Spanish', 'French', 'Indonesian', 'Russian', 'Chinese', 'Greek'
 ]
 
 class MessageHandler {
@@ -41,10 +42,17 @@ class MessageHandler {
 
     return new Promise(function(resolve) {
 
-      bot.getProfile(sender.id, (err, profile) => {
-        if (err) return Logger.log('getProfileError: ' + JSON.stringify(err))
+      const next = MessageHandler.next(bot, sender)
 
-        db.getAsync(sender.id).then((context) => {
+      next.getProfile(sender.id, (err, profile) => {
+        if (err) return Logger.log(`getProfileError: ${JSON.stringify(err)}`)
+
+        // cache the user for subsequent requests
+        cache[sender.id] = profile
+
+        db.getAsync(sender.id).then((context, err) => {
+          if (err) Logger.log(`getAsyncError: ${JSON.stringify(err)}`)
+
           // check for postbacks
           if (postback && postback.payload) {
             bot.setTyping(sender.id, true)
@@ -69,10 +77,9 @@ class MessageHandler {
             return resolve(MessageHandler.handlePostBack(context, {payload: message.text}, profile, sender, reply))
           }
           // no context
-          if (context === null) {
+          if (context === null || context === '') {
             return resolve(MessageHandler.handleNoContext(sender, profile, message, reply))
           }
-
           // we have context and the user has sent a text message, before translation check if this is
           // a possible direct change command: {lang} to {lang}
           if (isPossibleChangeCommand(message.text)) {
@@ -86,6 +93,20 @@ class MessageHandler {
         })
       })
     })
+  }
+
+  // next middlewear
+  static next(bot, sender) {
+    let next = bot
+    if (cache[sender.id] !== undefined) {
+      // pseudo middlewear handler
+      next = {
+        getProfile: (id, cb) => {
+          cb(null, cache[sender.id])
+        }
+      }
+    }
+    return next
   }
 
   // handlePostBack
@@ -177,7 +198,7 @@ class MessageHandler {
 
   // handleReset
   static handleReset(sender, reply) {
-    db.delAsync(sender.id).then((err) => {
+    db.setAsync(sender.id, '').then((err) => {
       if (err) Logger.log(err)
       return reply({
         text: 'OK, what should I translate for you next?'
