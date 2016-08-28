@@ -60,7 +60,7 @@ class MessageHandler {
   handleMessage(payload, reply) {
 
     const { sender, message, postback } = payload
-    const next = this.next(this.bot, sender)
+    const next = this.next(sender)
 
     // we don't care about handling our own responses
     if (sender.id === config.fb_page_id) return
@@ -139,9 +139,8 @@ class MessageHandler {
   handleGetStarted(sender, profile, reply) {
     Logger.log('handleGetStarted')
     reply({
-      text: `¡Hola! Start by telling me what languages to translate for you. Say something like ${getSmartExample(profile)}\n\nAsk me for "help" at any time`
+      text: `Hola ${profile && profile.first_name}! Start by telling me what languages to translate for you. Say something like ${getSmartExample(profile)}\n\nAsk me for "help" at any time`
     }, () => {
-      //${profile && profile.first_name}
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)
     })
