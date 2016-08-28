@@ -5,13 +5,16 @@ jest.unmock('bluebird')
 jest.unmock('sshpk')
 jest.unmock('lodash')
 jest.unmock('../src/db/redis')
+jest.unmock('../src/db/repo')
+jest.unmock('../src/lib/state')
 jest.unmock('../src/handler/message')
 jest.unmock('../src/lib/translator')
 jest.unmock('../src/lib/lang')
 
 const _ = require('lodash')
 const languages = require('../src/lib/lang')
-const db = require('../src/db/redis')
+const repo = require('../src/db/repo')
+const state = require('../src/lib/state')
 const _MessageHandler = require('../src/handler/message')
 
 const userId = 'testUserId'
@@ -35,23 +38,58 @@ const privates = MessageHandler._privates()
 
 describe('Bot tests', function() {
 
-  describe('DB integration test', function() {
+  beforeEach(() => {
+    state.clear()
+    delete profile.context
+  })
+
+  describe('State test', function() {
+    it('should set state correctly', function() {
+      expect(state.get(userId)).toEqual(undefined)
+      state.set(userId, 'test')
+      expect(state.get(userId)).toEqual('test')
+    })
+  })
+
+  describe('DB client test', function() {
     it('should set and get context from the db', function(done) {
       const testValue = 'test_value'
-      db.setAsync(userId, testValue).then((context) => {
-        db.getAsync(userId).then((context) => {
-          expect(context).toEqual(testValue)
+      repo(userId).set(testValue).then(() => {
+        repo(userId).get().then((response) => {
+          expect(response.context).toEqual(testValue)
           done()
         })
-      });
-    });
-  });
+      })
+    })
+  })
+
+  describe('DB/State integration test', function() {
+    let profile = {}
+    beforeEach(() => { profile = {} })
+    it('should retrieve data from state', function(done) {
+      profile.context = 'test_value'
+      state.set(userId, profile)
+      repo(userId).get().then((response) => {
+        expect(response.context).toEqual('test_value')
+        expect(response.source).toEqual('state')
+        done()
+      })
+    })
+
+    it('should retrieve data from the DB', function(done) {
+      repo(userId).get().then((response) => {
+        expect(response.context).toEqual('test_value')
+        expect(response.source).toEqual('redis')
+        done()
+      })
+    })
+  })
 
   describe('Message handlers', function() {
     let payload;
     beforeEach(() => {
       payload = {
-        sender: { id: 1 },
+        sender: { id: 'senderId' },
         message: { text: ''},
         postback: null
       }
@@ -64,7 +102,7 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
         done()
       })
-    });
+    })
 
     it('should NOT call handleHelp if context is set', function(done) {
       payload.message.text = 'help'
@@ -74,7 +112,7 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleHelp).not.toHaveBeenCalled()
         done()
       })
-    });
+    })
 
     it('should call handleTranslation if context is set', function(done) {
       payload.message.text = 'test message'
@@ -86,9 +124,10 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleNoContext).not.toHaveBeenCalled()
         done()
       })
-    });
+    })
 
     it('should NOT call handleTranslation if no context is set', function(done) {
+      payload.sender.id = 'helloUser'
       payload.message.text = 'test message'
       spyOn(MessageHandler, 'handleTranslation')
       spyOn(MessageHandler, 'handleNoContext')
@@ -97,7 +136,7 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleNoContext).toHaveBeenCalled()
         done()
       })
-    });
+    })
 
     it('should call handleSetContext', function(done) {
       payload.message.text = 'english to spanish'
@@ -106,7 +145,7 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
         done()
       })
-    });
+    })
 
     it('should NOT call handleSetContext', function(done) {
       payload.message.text = 'english to blah'
@@ -115,7 +154,7 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleSetContext).not.toHaveBeenCalled()
         done()
       })
-    });
+    })
 
     it('should call handleSetContext from a change command', function(done) {
       payload.message.text = 'french to dutch'
@@ -127,9 +166,9 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
         done()
       })
-    });
+    })
 
-  });
+  })
 
   describe('Postback handlers', function() {
     let payload;
@@ -150,7 +189,7 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleGetStarted).toHaveBeenCalled()
         done()
       })
-    });
+    })
 
     it('should call handleHelp postback', function(done) {
       payload.postback.payload = '#help'
@@ -159,7 +198,7 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
         done()
       })
-    });
+    })
 
     it('should call handleReset postback', function(done) {
       payload.postback.payload = '#reset'
@@ -168,7 +207,7 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleReset).toHaveBeenCalled()
         done()
       })
-    });
+    })
 
     it('should call handleSwitch postback', function(done) {
       payload.postback.payload = '#switch'
@@ -177,7 +216,7 @@ describe('Bot tests', function() {
         expect(MessageHandler.handleSwitch).toHaveBeenCalled()
         done()
       })
-    });
+    })
 
     it('should call handleShowAllLanguages postback', function(done) {
       payload.postback.payload = '#list'
@@ -209,7 +248,7 @@ describe('Bot tests', function() {
       expect(context.hasTwo).toEqual(true)
       expect(context.hasOne).toEqual(false)
       expect(context.hasNone).toEqual(false)
-    });
+    })
 
     it('should get context from message with strict matching', function() {
       let context = privates.getContextFromMessage('english to spanish', true)
@@ -219,7 +258,7 @@ describe('Bot tests', function() {
       expect(context.hasTwo).toEqual(true)
       expect(context.hasOne).toEqual(false)
       expect(context.hasNone).toEqual(false)
-    });
+    })
 
     it('should NOT get context from message with strict matching', function() {
       let context = privates.getContextFromMessage('translate from english to spanish please', true)
@@ -229,7 +268,7 @@ describe('Bot tests', function() {
       expect(context.hasTwo).toEqual(false)
       expect(context.hasOne).toEqual(false)
       expect(context.hasNone).toEqual(true)
-    });
+    })
 
     it('should part get context from message', function() {
       let context = privates.getContextFromMessage('french to blahh')
@@ -239,7 +278,7 @@ describe('Bot tests', function() {
       expect(context.hasTwo).toEqual(false)
       expect(context.hasOne).toEqual(true)
       expect(context.hasNone).toEqual(false)
-    });
+    })
 
     it('should NOT get context from message', function() {
       let context = privates.getContextFromMessage('ping to pong')
@@ -249,7 +288,7 @@ describe('Bot tests', function() {
       expect(context.hasTwo).toEqual(false)
       expect(context.hasOne).toEqual(false)
       expect(context.hasNone).toEqual(true)
-    });
+    })
 
     it('should get context from code', function() {
       let context = privates.getContextFromCode('fr:de')
@@ -257,7 +296,7 @@ describe('Bot tests', function() {
       expect(context.from).toEqual('French')
       expect(context.to).toEqual('German')
       expect(context.hasTwo).toEqual(true)
-    });
+    })
 
     it('should switch context', function() {
       const context = { code: 'en:ru', from: 'English', to: 'Russian' }
@@ -265,7 +304,7 @@ describe('Bot tests', function() {
       expect(context.code).toEqual('ru:en')
       expect(context.from).toEqual('Russian')
       expect(context.to).toEqual('English')
-    });
+    })
 
     it('should get language name', function() {
       expect(privates.getLanguageName('en')).toEqual('English')

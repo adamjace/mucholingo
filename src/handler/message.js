@@ -5,11 +5,11 @@ const t = require('../lib/translator')
 const Logger = require('../lib/logger')
 const languages = require('../lib/lang')
 const mixpanel = require('../lib/mixpanel')
-const db = require('../db/redis')
-const _ = require('lodash')
+const state = require('../lib/state')
+const repo = require('../db/repo')
 const config = require('../config')
+const _ = require('lodash')
 
-const cache = {}
 const maxTextReplyLength = 320
 
 const responseType = {
@@ -39,11 +39,12 @@ class MessageHandler {
   // next middlewear
   next(sender) {
     let next = this.bot
-    if (cache[sender.id] !== undefined) {
+    const profile = state.get(sender.id)
+    if (profile !== undefined) {
       // pseudo middlewear handler
       next = {
         getProfile: (id, cb) => {
-          cb(null, cache[sender.id])
+          cb(null, profile)
         }
       }
     }
@@ -68,12 +69,13 @@ class MessageHandler {
 
       next.getProfile(sender.id, (err, profile) => {
         if (err) return Logger.log(`getProfileError: ${JSON.stringify(err)}`)
-
         // cache the user for subsequent requests
-        cache[sender.id] = profile
+        state.set(sender.id, profile)
 
-        db.getAsync(sender.id).then((context, err) => {
+        repo(sender.id).get().then((response, err) => {
           if (err) Logger.log(`getAsyncError: ${JSON.stringify(err)}`)
+
+          const { context } = response
 
           // check for postbacks
           if (postback && postback.payload) {
@@ -91,7 +93,7 @@ class MessageHandler {
 
           // show typing action
           this.typing(sender)
-          if (_.includes(message.text.toLowerCase(), 'help') && context === null) {
+          if (_.includes(message.text.toLowerCase(), 'help') && !context) {
             return resolve(this.handleHelp(context, profile, sender, reply))
           }
           // reset or switch command
@@ -99,7 +101,7 @@ class MessageHandler {
             return resolve(this.handlePostBack(context, {payload: message.text}, profile, sender, reply))
           }
           // no context
-          if (context === null || context === '') {
+          if (!context) {
             return resolve(this.handleNoContext(sender, profile, message, reply))
           }
           // we have context and the user has sent a text message, before translation check if this is
@@ -206,7 +208,7 @@ class MessageHandler {
 
   // handleReset
   handleReset(sender, reply) {
-    db.setAsync(sender.id, '').then((err) => {
+    repo(sender.id).set('').then((err) => {
       if (err) Logger.log(err)
       return reply({
         text: 'OK, what should I translate for you next?'
@@ -267,7 +269,7 @@ class MessageHandler {
   // handleSetContext
   handleSetContext(code, from, to, sender, message, reply) {
     Logger.log('handleSetContext')
-    db.setAsync(sender.id, code).then((err) => {
+    repo(sender.id).set(code).then((err) => {
       if (err) Logger.log(err)
       return reply({
         text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.`
