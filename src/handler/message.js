@@ -162,7 +162,7 @@ class MessageHandler {
       }
     ]
 
-    if (context) {
+    if (context !== '' && context != null) {
       context = getContextFromCode(context)
       text = `Hola again. I see you've asked for some help...\n\nI'm currently translating everything you say from ${context.from} to ${context.to}\n\n`
       options.unshift(
