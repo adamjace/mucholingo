@@ -79,20 +79,16 @@ class MessageHandler {
 
           // check for postbacks
           if (postback && postback.payload) {
-            this.typing(sender)
             return resolve(this.handlePostBack(context, postback, profile, sender, reply))
           }
           // check if a quick reply (comes in as a message)
           if (message && message.quick_reply && message.quick_reply.payload) {
-            this.typing(sender)
             return resolve(this.handlePostBack(context, message.quick_reply, profile, sender, reply))
           }
 
           // not a postback and not a text message, return
           if (!message.text) return resolve(false)
 
-          // show typing action
-          this.typing(sender)
           if (_.includes(message.text.toLowerCase(), 'help') && !context) {
             return resolve(this.handleHelp(context, profile, sender, reply))
           }
@@ -282,6 +278,7 @@ class MessageHandler {
   // handleTranslation
   handleTranslation(context, sender, message, reply) {
     let response = {}
+    this.typing(sender)
     t.translate(message.text, context).
       then((result) => {
         if (result.length > maxTextReplyLength) {
