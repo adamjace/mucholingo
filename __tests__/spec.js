@@ -12,8 +12,7 @@ jest.unmock('../src/lib/lang')
 const _ = require('lodash')
 const languages = require('../src/lib/lang')
 const db = require('../src/db/redis')
-const MessageHandler = require('../src/handler/message')
-const privates = MessageHandler._privates()
+const _MessageHandler = require('../src/handler/message')
 
 const userId = 'testUserId'
 const reply = jest.fn()
@@ -30,6 +29,9 @@ const bot = {
     cb(null, profile)
   }
 }
+
+const MessageHandler = new _MessageHandler(bot)
+const privates = MessageHandler._privates()
 
 describe('Bot tests', function() {
 
@@ -58,7 +60,7 @@ describe('Bot tests', function() {
     it('should call handleHelp if no context is set', function(done) {
       payload.message.text = 'help'
       spyOn(MessageHandler, 'handleHelp')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
         done()
       })
@@ -68,7 +70,7 @@ describe('Bot tests', function() {
       payload.message.text = 'help'
       payload.sender.id = userId
       spyOn(MessageHandler, 'handleHelp')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).not.toHaveBeenCalled()
         done()
       })
@@ -79,7 +81,7 @@ describe('Bot tests', function() {
       payload.sender.id = userId
       spyOn(MessageHandler, 'handleTranslation')
       spyOn(MessageHandler, 'handleNoContext')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleTranslation).toHaveBeenCalled()
         expect(MessageHandler.handleNoContext).not.toHaveBeenCalled()
         done()
@@ -90,7 +92,7 @@ describe('Bot tests', function() {
       payload.message.text = 'test message'
       spyOn(MessageHandler, 'handleTranslation')
       spyOn(MessageHandler, 'handleNoContext')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
         expect(MessageHandler.handleNoContext).toHaveBeenCalled()
         done()
@@ -100,7 +102,7 @@ describe('Bot tests', function() {
     it('should call handleSetContext', function(done) {
       payload.message.text = 'english to spanish'
       spyOn(MessageHandler, 'handleSetContext')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
         done()
       })
@@ -109,7 +111,7 @@ describe('Bot tests', function() {
     it('should NOT call handleSetContext', function(done) {
       payload.message.text = 'english to blah'
       spyOn(MessageHandler, 'handleSetContext')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSetContext).not.toHaveBeenCalled()
         done()
       })
@@ -120,7 +122,7 @@ describe('Bot tests', function() {
       payload.sender.id = userId
       spyOn(MessageHandler, 'handleSetContext')
       spyOn(MessageHandler, 'handleTranslation')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
         done()
@@ -144,7 +146,7 @@ describe('Bot tests', function() {
     it('should call handleGetStarted postback', function(done) {
       payload.postback.payload = '#getstarted'
       spyOn(MessageHandler, 'handleGetStarted')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleGetStarted).toHaveBeenCalled()
         done()
       })
@@ -153,7 +155,7 @@ describe('Bot tests', function() {
     it('should call handleHelp postback', function(done) {
       payload.postback.payload = '#help'
       spyOn(MessageHandler, 'handleHelp')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
         done()
       })
@@ -162,7 +164,7 @@ describe('Bot tests', function() {
     it('should call handleReset postback', function(done) {
       payload.postback.payload = '#reset'
       spyOn(MessageHandler, 'handleReset')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleReset).toHaveBeenCalled()
         done()
       })
@@ -171,7 +173,7 @@ describe('Bot tests', function() {
     it('should call handleSwitch postback', function(done) {
       payload.postback.payload = '#switch'
       spyOn(MessageHandler, 'handleSwitch')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSwitch).toHaveBeenCalled()
         done()
       })
@@ -180,7 +182,7 @@ describe('Bot tests', function() {
     it('should call handleShowAllLanguages postback', function(done) {
       payload.postback.payload = '#list'
       spyOn(MessageHandler, 'handleShowAllLanguages')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleShowAllLanguages).toHaveBeenCalled()
         done()
       })
@@ -190,7 +192,7 @@ describe('Bot tests', function() {
       payload.postback = null
       payload.message = {quick_reply:{payload: '#help'}}
       spyOn(MessageHandler, 'handleHelp')
-      MessageHandler.handleMessage(bot, payload, reply).then(() => {
+      MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
         done()
       })

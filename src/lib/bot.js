@@ -11,9 +11,9 @@ let bot = new Bot({
   app_secret: config.fb_secret
 })
 
+const messageHandler = new MessageHandler(bot)
 bot.on('error', ErrorHandler.handleError)
-bot.on('message', MessageHandler.handleMessage.bind(null, bot))
-bot.on('postback', MessageHandler.handleMessage.bind(null, bot))
+bot.on('message', messageHandler.handleMessage.bind(messageHandler))
+bot.on('postback', messageHandler.handleMessage.bind(messageHandler))
 
 module.exports = bot
-
