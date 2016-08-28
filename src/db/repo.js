@@ -10,7 +10,7 @@ const repo = (senderId) => {
   return {
     get: () => {
       return new Promise((resolve, reject) => {
-        if (profile.context) {
+        if (profile.context != null) {
           return resolve({ context: profile.context, source: 'state' })
         }
         db.getAsync(senderId).then((context, err) => {

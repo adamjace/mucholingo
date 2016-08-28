@@ -1,5 +1,7 @@
 let store = {}
 
+// application state
+// flushes when the API is restarted
 const state = {
   get: (key) => {
     return store[key]
