@@ -34,6 +34,18 @@
   },
   "jest": {
     "verbose": "true",
-    "bail": "true"
+    "bail": "true",
+    "unmockedModulePathPatterns": [
+      "<rootDir>/node_modules/redis/",
+      "<rootDir>/node_modules/bluebird/",
+      "<rootDir>/node_modules/sshpk",
+      "<rootDir>/node_modules/lodash/",
+      "<rootDir>/src/db/redis",
+      "<rootDir>/src/db/repo",
+      "<rootDir>/src/lib/state",
+      "<rootDir>/src/lib/translator",
+      "<rootDir>/src/lib/lang",
+      "<rootDir>/src/handler/message"
+    ]
   }
 }

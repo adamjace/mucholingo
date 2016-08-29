@@ -20,9 +20,9 @@ class Mixpanel {
   }
 
   static track(event, sender, message) {
-    _mixpanel.track(event, { 
+    _mixpanel.track(event, {
       distinctId: sender.id,
-      message: message 
+      message: message
     })
   }
 }

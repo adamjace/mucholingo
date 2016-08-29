@@ -36,12 +36,12 @@ class MessageHandler {
     this.bot = bot
   }
 
-  // next middlewear
+  // next middleware
   next(sender) {
     let next = this.bot
     const profile = state.get(sender.id)
     if (profile !== undefined) {
-      // pseudo middlewear handler
+      // pseudo middleware handler
       next = {
         getProfile: (id, cb) => {
           cb(null, profile)
@@ -60,13 +60,13 @@ class MessageHandler {
   handleMessage(payload, reply) {
 
     const { sender, message, postback } = payload
-    const next = this.next(sender)
 
     // we don't care about handling our own responses
     if (sender.id === config.fb_page_id) return
 
     return new Promise((resolve) => {
 
+      const next = this.next(sender)
       next.getProfile(sender.id, (err, profile) => {
         if (err) return Logger.log(`getProfileError: ${JSON.stringify(err)}`)
         // cache the user for subsequent requests
@@ -104,7 +104,7 @@ class MessageHandler {
           // a possible direct change command: {lang} to {lang}
           if (isPossibleChangeCommand(message.text)) {
             const context = getContextFromMessage(message.text, true)
-            if (context.hasTwo) {
+            if (context.hasTwo && context.from !== context.to) {
               return (resolve(this.handleSetContext(context.code, context.from, context.to, sender, null, reply)))
             }
           }

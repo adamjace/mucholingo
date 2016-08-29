@@ -1,16 +1,5 @@
 'use strict'
 
-jest.unmock('redis')
-jest.unmock('bluebird')
-jest.unmock('sshpk')
-jest.unmock('lodash')
-jest.unmock('../src/db/redis')
-jest.unmock('../src/db/repo')
-jest.unmock('../src/lib/state')
-jest.unmock('../src/handler/message')
-jest.unmock('../src/lib/translator')
-jest.unmock('../src/lib/lang')
-
 const _ = require('lodash')
 const languages = require('../src/lib/lang')
 const repo = require('../src/db/repo')
