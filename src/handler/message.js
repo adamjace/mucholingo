@@ -407,7 +407,7 @@ function getRandom(responses) {
 function getSmartExample(profile) {
   const locale = getLanguageNameLocale(profile)
   let shuffled = shuffleArray(_.clone(examples))
-  if (locale === '') return `"${shuffled[0]} to ${shuffled[1]}"`
+  if (!locale) return `"${shuffled[0]} to ${shuffled[1]}"`
 
   shuffled = _.remove(shuffled, (n) => { return n !== locale })
   return `"${locale} to ${shuffled[0]}"`

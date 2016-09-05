@@ -308,6 +308,7 @@ describe('Bot tests', function() {
       expect(privates.getLanguageNameLocale({locale: 'es_ES'})).toEqual('Spanish')
       expect(privates.getLanguageNameLocale({locale: 'de_DE'})).toEqual('German')
       expect(privates.getLanguageNameLocale({locale: 'cs_CZ'})).toEqual('Czech')
+      expect(privates.getLanguageNameLocale({locale: 'nothing'})).toEqual(undefined)
     })
   })
 })
