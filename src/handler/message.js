@@ -393,7 +393,7 @@ function getAllLanguageNames() {
 
 // getLanguageNameLocale
 function getLanguageNameLocale(profile) {
-  if (profile && !profile.locale && profile.locale.indexOf('_') === -1) return ''
+  if (profile && !profile.locale && profile.locale.indexOf('_') === -1) return
   const code = profile.locale.split('_')[0]
   return getLanguageName(code)
 }
@@ -405,8 +405,8 @@ function getRandom(responses) {
 
 // getSmartExample
 function getSmartExample(profile) {
-  const locale = getLanguageNameLocale(profile)
   let shuffled = shuffleArray(_.clone(examples))
+  const locale = getLanguageNameLocale(profile)
   if (!locale) return `"${shuffled[0]} to ${shuffled[1]}"`
 
   shuffled = _.remove(shuffled, (n) => { return n !== locale })
