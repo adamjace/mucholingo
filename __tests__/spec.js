@@ -309,6 +309,29 @@ describe('Bot tests', function() {
       expect(privates.getLanguageNameLocale({locale: 'de_DE'})).toEqual('German')
       expect(privates.getLanguageNameLocale({locale: 'cs_CZ'})).toEqual('Czech')
       expect(privates.getLanguageNameLocale({locale: 'nothing'})).toEqual(undefined)
+      expect(privates.getLanguageNameLocale({})).toEqual(undefined)
+      expect(privates.getLanguageNameLocale(null)).toEqual(undefined)
+    })
+
+    it('should test that smart example is never undefined', function() {
+      expect(privates.getSmartExample({locale: 'en_AU'}).split(' ')).not.toContain('undefined')
+      expect(privates.getSmartExample({locale: 'en+test'}).split(' ')).not.toContain('undefined')
+      expect(privates.getSmartExample({locale: ''}).split(' ')).not.toContain('undefined')
+      expect(privates.getSmartExample({}).split(' ')).not.toContain('undefined')
+      expect(privates.getSmartExample().split(' ')).not.toContain('undefined')
+    })
+
+    it('should get all language names', function() {
+      expect(privates.getAllLanguageNames().length).toEqual(91)
+    })
+
+    it('should detect possible change commands', function() {
+      expect(privates.isPossibleChangeCommand('english to spanish')).toEqual(true)
+      expect(privates.isPossibleChangeCommand('a to b')).toEqual(true)
+      expect(privates.isPossibleChangeCommand('english dutch')).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english romanian spanish')).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english to')).toEqual(false)
+      expect(privates.isPossibleChangeCommand('blah_to_blah')).toEqual(false)
     })
   })
 })

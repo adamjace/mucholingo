@@ -309,7 +309,9 @@ class MessageHandler {
       switchContext: switchContext,
       getLanguageName: getLanguageName,
       getAllLanguageNames: getAllLanguageNames,
-      getLanguageNameLocale: getLanguageNameLocale
+      getLanguageNameLocale: getLanguageNameLocale,
+      getSmartExample: getSmartExample,
+      isPossibleChangeCommand: isPossibleChangeCommand
     }
   }
 }
@@ -393,7 +395,7 @@ function getAllLanguageNames() {
 
 // getLanguageNameLocale
 function getLanguageNameLocale(profile) {
-  if (profile && !profile.locale && profile.locale.indexOf('_') === -1) return
+  if (!profile || (profile && !profile.locale || profile.locale.indexOf('_') === -1)) return
   const code = profile.locale.split('_')[0]
   return getLanguageName(code)
 }
@@ -405,8 +407,8 @@ function getRandom(responses) {
 
 // getSmartExample
 function getSmartExample(profile) {
-  let shuffled = shuffleArray(_.clone(examples))
   const locale = getLanguageNameLocale(profile)
+  let shuffled = shuffleArray(_.clone(examples))
   if (!locale) return `"${shuffled[0]} to ${shuffled[1]}"`
 
   shuffled = _.remove(shuffled, (n) => { return n !== locale })
