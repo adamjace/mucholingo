@@ -42,6 +42,10 @@ const languages = [
     code: 'bg'
   },
   {
+    name: 'burmese',
+    code: 'my'
+  },
+  {
     name: 'catalan',
     code: 'ca'
   },
@@ -236,10 +240,6 @@ const languages = [
   {
     name: 'mongolian',
     code: 'mn'
-  },
-  {
-    name: 'burmese',
-    code: 'my'
   },
   {
     name: 'nepali',
