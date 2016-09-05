@@ -38,6 +38,6 @@ jspm_packages
 
 # pem
 key.pem
-
 launch.sh
+redis.sh
 .vscode
