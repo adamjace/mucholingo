@@ -20,6 +20,14 @@ const responseType = {
   list: '#list'
 }
 
+const baseHelpOptions = [
+  {
+    'type': 'postback',
+    'title': 'Show all languages',
+    'payload': responseType.list
+  }
+]
+
 const helpQuickReply = {
   'content_type': 'text',
   'title': 'Need help?',
@@ -36,12 +44,11 @@ class MessageHandler {
     this.bot = bot
   }
 
-  // next middleware
+  // pseudo middleware handler
   next(sender) {
     let next = this.bot
     const profile = state.get(sender.id)
     if (profile !== undefined) {
-      // pseudo middleware handler
       next = {
         getProfile: (id, cb) => {
           cb(null, profile)
@@ -66,8 +73,7 @@ class MessageHandler {
 
     return new Promise((resolve) => {
 
-      const next = this.next(sender)
-      next.getProfile(sender.id, (err, profile) => {
+      this.next(sender).getProfile(sender.id, (err, profile) => {
         if (err) return Logger.log(`getProfileError: ${JSON.stringify(err)}`)
         // cache the user for subsequent requests
         state.set(sender.id, profile)
@@ -82,27 +88,27 @@ class MessageHandler {
             return resolve(this.handlePostBack(context, postback, profile, sender, reply))
           }
           // check if a quick reply (comes in as a message)
-          if (message && message.quick_reply && message.quick_reply.payload) {
+          else if (message && message.quick_reply && message.quick_reply.payload) {
             return resolve(this.handlePostBack(context, message.quick_reply, profile, sender, reply))
           }
 
           // not a postback and not a text message, return
-          if (!message.text) return resolve(false)
+          else if (!message.text) return resolve(false)
 
-          if (_.includes(message.text.toLowerCase(), 'help') && !context) {
+          else if (_.includes(message.text.toLowerCase(), 'help') && !context) {
             return resolve(this.handleHelp(context, profile, sender, reply))
           }
           // reset or switch command
-          if (message.text === responseType.reset || message.text === responseType.switch) {
+          else if (message.text === responseType.reset || message.text === responseType.switch) {
             return resolve(this.handlePostBack(context, {payload: message.text}, profile, sender, reply))
           }
           // no context
-          if (!context) {
+          else if (!context) {
             return resolve(this.handleNoContext(sender, profile, message, reply))
           }
           // we have context and the user has sent a text message, before translation check if this is
           // a possible direct change command: {lang} to {lang}
-          if (isPossibleChangeCommand(message.text)) {
+          else if (isPossibleChangeCommand(message.text)) {
             const context = getContextFromMessage(message.text, true)
             if (context.hasTwo && context.from !== context.to) {
               return (resolve(this.handleSetContext(context.code, context.from, context.to, sender, null, reply)))
@@ -121,16 +127,16 @@ class MessageHandler {
     if (postback.payload === responseType.getStarted) {
       return this.handleGetStarted(sender, profile, reply)
     }
-    if (postback.payload === responseType.help) {
+    else if (postback.payload === responseType.help) {
       return this.handleHelp(context, profile, sender, reply)
     }
-    if (postback.payload === responseType.reset) {
+    else if (postback.payload === responseType.reset) {
       return this.handleReset(sender, reply)
     }
-    if (postback.payload === responseType.switch) {
+    else if (postback.payload === responseType.switch) {
       return this.handleSwitch(context, sender, reply)
     }
-    if (postback.payload === responseType.list) {
+    else if (postback.payload === responseType.list) {
       return this.handleShowAllLanguages(sender, reply)
     }
   }
@@ -150,13 +156,7 @@ class MessageHandler {
   handleHelp(context, profile, sender, reply) {
     Logger.log('handleHelp')
     let text = `Hola. I see you've asked for some help... \n\nTell me what languages to translate by saying something like ${getSmartExample(profile)}`
-    let options = [
-      {
-        'type': 'postback',
-        'title': 'Show all languages',
-        'payload': responseType.list
-      }
-    ]
+    let options = baseHelpOptions
 
     if (context) {
       context = getContextFromCode(context)
@@ -190,7 +190,7 @@ class MessageHandler {
   }
 
   // handleShowAllLanguages
-  // due to FBs payload size limit we need to chunk the list into seprate bits
+  // due to Facebook's payload size limit we need to chunk the list into seprate bits
   handleShowAllLanguages(sender, reply) {
     const list = getAllLanguageNames()
     const first = list.splice(0, list.length / 3)
@@ -278,7 +278,6 @@ class MessageHandler {
   // handleTranslation
   handleTranslation(context, sender, message, reply) {
     let response = {}
-    this.typing(sender)
     t.translate(message.text, context).
       then((result) => {
         if (result.length > maxTextReplyLength) {
@@ -301,7 +300,7 @@ class MessageHandler {
   }
 
   // _privates
-  // expose these for unit testing
+  // expose these for tests
   _privates() {
     return {
       getContextFromMessage: getContextFromMessage,
