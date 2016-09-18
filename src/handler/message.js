@@ -66,6 +66,9 @@ class MessageHandler {
   // handleMessage is our main handler
   handleMessage(payload, reply) {
 
+    // clear state if we need to
+    state.flushIfSizeLimitExceeded()
+
     const { sender, message, postback } = payload
 
     // we don't care about handling our own responses

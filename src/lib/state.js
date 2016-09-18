@@ -1,20 +1,29 @@
 let store = {}
 
-// application state
-// flushes when the API is restarted
-const state = {
-  get: (key) => {
-    return store[key]
-  },
-  set: (key, value) => {
-    store[key] = value
-  },
-  clear: () => {
-    store = {}
-  },
-  expose: () => {
-    return store
-  }
+// number of keys to store in state before flushing
+const sizeLimit = 1000
+
+function get(key) {
+  return store[key]
 }
 
-module.exports = state
+function set(key, value) {
+  store[key] = value
+}
+
+function clear() {
+  store = {}
+}
+
+function size() {
+  return Object.keys(store).length
+}
+
+function flushIfSizeLimitExceeded() {
+  if (size() < sizeLimit) return
+  clear()
+}
+
+module.exports = {
+  get, set, clear, size, flushIfSizeLimitExceeded
+}

@@ -38,6 +38,27 @@ describe('Bot tests', function() {
       state.set(userId, 'test')
       expect(state.get(userId)).toEqual('test')
     })
+
+    it('should set and clear state correctly', function() {
+      state.set('user1', 'apples')
+      state.set('user2', 'pears')
+      state.set('user3', 'strawberries')
+      state.set('user4', 'bananas')
+
+      expect(state.size()).toEqual(4)
+      state.flushIfSizeLimitExceeded()
+      expect(state.size()).toEqual(4)
+      state.clear()
+      expect(state.size()).toEqual(0)
+
+      for (let i = 1; i < 1002; i++) {
+        state.set(`user_${i}`, i)
+      }
+
+      expect(state.size()).toEqual(1001)
+      state.flushIfSizeLimitExceeded()
+      expect(state.size()).toEqual(0)
+    })
   })
 
   describe('DB client test', function() {
