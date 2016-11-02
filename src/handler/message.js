@@ -177,8 +177,7 @@ class MessageHandler {
         }
       )
     }
-    Logger.log('TEXT --> \n\n' +  JSON.stringify(text) + '\n\n')
-    Logger.log('options --> \n\n' +  JSON.stringify(options) + '\n\n')
+
     return reply({
       'attachment': {
         'type': 'template',
