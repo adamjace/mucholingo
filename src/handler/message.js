@@ -127,6 +127,7 @@ class MessageHandler {
   // handlePostBack
   handlePostBack(context, postback, profile, sender, reply) {
     Logger.log('handlePostBack')
+    Logger.log('PAYLOAD --> ' + JSON.stringify(postback.payload))
     if (postback.payload === responseType.getStarted) {
       return this.handleGetStarted(sender, profile, reply)
     }
