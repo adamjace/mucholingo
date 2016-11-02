@@ -127,7 +127,6 @@ class MessageHandler {
   // handlePostBack
   handlePostBack(context, postback, profile, sender, reply) {
     Logger.log('handlePostBack')
-    Logger.log('PAYLOAD --> ' + JSON.stringify(postback.payload))
     if (postback.payload === responseType.getStarted) {
       return this.handleGetStarted(sender, profile, reply)
     }
@@ -161,7 +160,7 @@ class MessageHandler {
     Logger.log('handleHelp')
     let text = `Hola. I see you've asked for some help... \n\nTell me what languages to translate by saying something like ${getSmartExample(profile)}`
     let options = baseHelpOptions
-
+    Logger.log('1')
     if (context) {
       context = getContextFromCode(context)
       text = `Hola again. I see you've asked for some help...\n\nI'm currently translating everything you say from ${context.from} to ${context.to}\n\n`
@@ -178,7 +177,7 @@ class MessageHandler {
         }
       )
     }
-
+    Logger.log('2')
     return reply({
       'attachment': {
         'type': 'template',
