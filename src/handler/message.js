@@ -159,7 +159,7 @@ class MessageHandler {
   handleHelp(context, profile, sender, reply) {
     Logger.log('handleHelp')
     let text = `Hola. I see you've asked for some help... \n\nTell me what languages to translate by saying something like ${getSmartExample(profile)}`
-    let options = baseHelpOptions
+    let options = _.clone(baseHelpOptions)
 
     if (context) {
       context = getContextFromCode(context)
@@ -177,8 +177,8 @@ class MessageHandler {
         }
       )
     }
-    Logger.log('TEXT --> /n/n' +  JSON.stringify(text) + '/n/n')
-    Logger.log('options --> /n/n' +  JSON.stringify(options) + '/n/n')
+    Logger.log('TEXT --> \n\n' +  JSON.stringify(text) + '\n\n')
+    Logger.log('options --> \n\n' +  JSON.stringify(options) + '\n\n')
     return reply({
       'attachment': {
         'type': 'template',
