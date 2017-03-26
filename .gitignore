@@ -40,4 +40,9 @@ jspm_packages
 key.pem
 launch.sh
 redis.sh
-.vscode
+
+# config
+.env
+
+# SSL
+ssl
