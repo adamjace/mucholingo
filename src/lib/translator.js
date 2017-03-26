@@ -5,7 +5,7 @@ const googleTranslate = require('google-translate')(config.google_key)
 const Promise = require('bluebird')
 
 class Translator {
-  
+
   static translate(message, context) {
     const arr = context.split(':')
     const source = arr[0]

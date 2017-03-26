@@ -43,7 +43,6 @@
       "<rootDir>/src/db/redis",
       "<rootDir>/src/db/repo",
       "<rootDir>/src/lib/state",
-      "<rootDir>/src/lib/translator",
       "<rootDir>/src/lib/lang",
       "<rootDir>/src/handler/message"
     ]
