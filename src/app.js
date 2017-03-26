@@ -1,12 +1,13 @@
 'use strict'
 
+const env = require('dotenv').config()
 const fs = require('fs')
 const http = require('http')
 const https = require('https')
 const express = require('express')
 const bodyParser = require('body-parser')
-const Logger = require('./lib/logger')
 const config = require('./config')
+const Logger = require('./lib/logger')
 const Routes = require('./routes')
 
 // create the app
@@ -21,9 +22,9 @@ Routes.makeRoutes(app)
 
 // start https
 const options = {
-  key: fs.readFileSync('ssl/lost1n.space.key'),
-  cert: fs.readFileSync('ssl/lost1n.space.crt'),
-  ca: [fs.readFileSync('ssl/gd_bundle-g2-g1.crt')]
+  key: fs.readFileSync(config.ssl_key),
+  cert: fs.readFileSync(config.ssl_cert),
+  ca: [fs.readFileSync(config.ssl_ca)]
 }
 https.createServer(options, app).listen(443)
 Logger.log('Server running over https')
@@ -31,6 +32,3 @@ Logger.log('Server running over https')
 // start the (non https) server
 http.createServer(app).listen(`${config.port}`)
 Logger.log(`Server running over http on port ${config.port}`)
-
-
-
