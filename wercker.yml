@@ -34,3 +34,6 @@ build:
         code: |
           echo "node version $(node -v) running"
           echo "npm version $(npm -v) running"
+    - script:
+        name: js lint
+        code: npm run lint
