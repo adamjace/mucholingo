@@ -1,6 +1,6 @@
 'use strict'
 
-const env = require('dotenv').config()
+require('dotenv').config()
 const fs = require('fs')
 const http = require('http')
 const https = require('https')

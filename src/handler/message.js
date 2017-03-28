@@ -7,37 +7,10 @@ const Logger = require('../lib/logger')
 const languages = require('../lib/lang')
 const mixpanel = require('../lib/mixpanel')
 const state = require('../lib/state')
+const _const = require('../lib/constants')
 const repo = require('../db/repo')
 const config = require('../config')
 const _ = require('lodash')
-
-const maxTextReplyLength = 320
-
-const responseType = {
-  help: '#help',
-  getStarted: '#getstarted',
-  reset: '#reset',
-  switch: '#switch',
-  list: '#list'
-}
-
-const baseHelpOptions = [
-  {
-    'type': 'postback',
-    'title': 'Show all languages',
-    'payload': responseType.list
-  }
-]
-
-const helpQuickReply = {
-  'content_type': 'text',
-  'title': 'Need help?',
-  'payload': '#help'
-}
-
-const examples = [
-  'English', 'German', 'Italian', 'Korean', 'Dutch', 'Japanese', 'Hindi', 'Spanish', 'French', 'Indonesian', 'Russian', 'Chinese', 'Greek'
-]
 
 class MessageHandler {
 
@@ -45,56 +18,66 @@ class MessageHandler {
     this.profileHandler = new ProfileHandler(bot)
   }
 
-  // handleMessage is our main handler
+  // handleMessage is our main message handler
+  // We need to handle all incoming messages that may be:
+  // postbacks, quick replies, help commands and translations
   handleMessage(payload, reply) {
+
+    const { sender, message, postback } = payload
 
     // clear state if we need to
     state.flushIfSizeLimitExceeded()
 
-    const { sender, message, postback } = payload
-
     // we don't care about handling our own responses
-    if (sender.id === config.fb_page_id) return
+    if (sender.id === config.fb_page_id)
+      return false
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
 
+      // getProfile retrieves user data from state first if it exists, otherwise
+      // performs an aysnc call to Facebook to get the users information
       this.profileHandler.getProfile(sender, (err, profile) => {
-        if (err) return Logger.log(`getProfileError: ${JSON.stringify(err)}`)
+
+        if (err) {
+          Logger.log(`getProfileError: ${JSON.stringify(err)}`)
+          reject(err)
+        }
 
         // cache the user for subsequent requests
         state.set(sender.id, profile)
 
+        // retrieve the users context (their translation mode) from state if it
+        // exists, otherwise perform a fetch from redis
         repo(sender.id).get().then((response, err) => {
-          if (err) Logger.log(`getAsyncError: ${JSON.stringify(err)}`)
+
+          if (err) {
+            Logger.log(`getAsyncError: ${JSON.stringify(err)}`)
+            reject(err)
+          }
 
           const { context } = response
 
-          // check for postbacks
           if (postback && postback.payload) {
             return resolve(this.handlePostBack(context, postback, profile, sender, reply))
           }
-          // check if a quick reply (comes in as a message)
           else if (message && message.quick_reply && message.quick_reply.payload) {
             return resolve(this.handlePostBack(context, message.quick_reply, profile, sender, reply))
           }
-
-          // not a postback and not a text message, return
-          else if (!message.text) return resolve(false)
-
+          else if (!message.text) {
+            return resolve(false)
+          }
           else if (_.includes(message.text.toLowerCase(), 'help') && !context) {
             return resolve(this.handleHelp(context, profile, sender, reply))
           }
-          // reset or switch command
-          else if (message.text === responseType.reset || message.text === responseType.switch) {
+          else if (message.text === _const.responseType.reset || message.text === _const.responseType.switch) {
             return resolve(this.handlePostBack(context, {payload: message.text}, profile, sender, reply))
           }
-          // no context
           else if (!context) {
             return resolve(this.handleNoContext(sender, profile, message, reply))
           }
-          // we have context and the user has sent a text message, before translation check if this is
-          // a possible direct change command: {lang} to {lang}
           else if (isPossibleChangeCommand(message.text)) {
+            // we have context and the user has sent a text message, before translation check if this is
+            // a possible direct change command: {lang} to {lang}
             const context = getContextFromMessage(message.text, true)
             if (context.hasTwo && context.from !== context.to) {
               return (resolve(this.handleSetContext(context.code, context.from, context.to, sender, null, reply)))
@@ -110,19 +93,19 @@ class MessageHandler {
   // handlePostBack
   handlePostBack(context, postback, profile, sender, reply) {
     Logger.log('handlePostBack')
-    if (postback.payload === responseType.getStarted) {
+    if (postback.payload === _const.responseType.getStarted) {
       return this.handleGetStarted(sender, profile, reply)
     }
-    else if (postback.payload === responseType.help) {
+    else if (postback.payload === _const.responseType.help) {
       return this.handleHelp(context, profile, sender, reply)
     }
-    else if (postback.payload === responseType.reset) {
+    else if (postback.payload === _const.responseType.reset) {
       return this.handleReset(sender, reply)
     }
-    else if (postback.payload === responseType.switch) {
+    else if (postback.payload === _const.responseType.switch) {
       return this.handleSwitch(context, sender, reply)
     }
-    else if (postback.payload === responseType.list) {
+    else if (postback.payload === _const.responseType.list) {
       return this.handleShowAllLanguages(sender, reply)
     }
   }
@@ -142,7 +125,7 @@ class MessageHandler {
   handleHelp(context, profile, sender, reply) {
     Logger.log('handleHelp')
     let text = `Hola. I see you've asked for some help... \n\nTell me what languages to translate by saying something like ${getSmartExample(profile)}`
-    let options = _.clone(baseHelpOptions)
+    let options = _.clone(_const.baseHelpOptions)
 
     if (context) {
       context = getContextFromCode(context)
@@ -151,12 +134,12 @@ class MessageHandler {
         {
           'type': 'postback',
           'title': 'Reset',
-          'payload': responseType.reset
+          'payload': _const.responseType.reset
         },
         {
           'type': 'postback',
           'title': `${context.to} to ${context.from}`,
-          'payload': responseType.switch
+          'payload': _const.responseType.switch
         }
       )
     }
@@ -266,13 +249,13 @@ class MessageHandler {
     let response = {}
     t.translate(message.text, context).
       then((result) => {
-        if (result.length > maxTextReplyLength) {
+        if (result.length > _const.maxTextReplyLength) {
           return reply({text: 'I\'m sorry, I can\'t translate all of that in one go. Try again with a smaller message'})
         }
         response.text = result
         // check if the user actually wants help by passing a quick reply button with the translated text
         if (_.includes(message.text.toLowerCase(), 'help')) {
-          response.quick_replies = [helpQuickReply]
+          response.quick_replies = [_const.helpQuickReply]
         }
         reply(response, (err) => {
           if (err) Logger.log(err)
@@ -328,7 +311,7 @@ function getContextFromCode(code) {
   }
 }
 
-// getContext
+// getContextMatches
 function getContextMatches(message, strict) {
   let matches = []
   const words = message.split(' ')
@@ -393,7 +376,7 @@ function getRandom(responses) {
 // getSmartExample
 function getSmartExample(profile) {
   const locale = getLanguageNameLocale(profile)
-  let shuffled = shuffleArray(_.clone(examples))
+  let shuffled = shuffleArray(_.clone(_const.languageExamples))
   if (!locale) return `"${shuffled[0]} to ${shuffled[1]}"`
 
   shuffled = _.remove(shuffled, (n) => { return n !== locale })

@@ -6,7 +6,7 @@ class Translator {
 
   static translate() {
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       resolve(true)
     })
   }

@@ -43,6 +43,7 @@
       "<rootDir>/src/db/repo",
       "<rootDir>/src/lib/state",
       "<rootDir>/src/lib/lang",
+      "<rootDir>/src/lib/constants",
       "<rootDir>/src/handler/message",
       "<rootDir>/src/handler/profile"
     ]
