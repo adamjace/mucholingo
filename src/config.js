@@ -24,4 +24,3 @@ for (const key of Object.keys(config)) {
 }
 
 module.exports = config
-

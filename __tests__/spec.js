@@ -3,6 +3,7 @@
 const _ = require('lodash')
 const languages = require('../src/lib/lang')
 const repo = require('../src/db/repo')
+const db = require('../src/db/redis')
 const state = require('../src/lib/state')
 const _MessageHandler = require('../src/handler/message')
 
@@ -28,6 +29,7 @@ const privates = MessageHandler._privates()
 describe('Bot tests', function() {
 
   beforeEach(() => {
+    db.__setContext(undefined)
     state.clear()
     delete profile.context
   })
@@ -87,6 +89,7 @@ describe('Bot tests', function() {
     })
 
     it('should retrieve data from the DB', function(done) {
+      db.__setContext('test_value')
       repo(userId).get().then((response) => {
         expect(response.context).toEqual('test_value')
         expect(response.source).toEqual('redis')
@@ -106,6 +109,7 @@ describe('Bot tests', function() {
     })
 
     it('should call handleHelp if no context is set', function(done) {
+      db.__setContext(undefined)
       payload.message.text = 'help'
       spyOn(MessageHandler, 'handleHelp')
       MessageHandler.handleMessage(payload, reply).then(() => {
@@ -115,6 +119,7 @@ describe('Bot tests', function() {
     })
 
     it('should NOT call handleHelp if context is set', function(done) {
+      db.__setContext('I have context')
       payload.message.text = 'help'
       payload.sender.id = userId
       spyOn(MessageHandler, 'handleHelp')
@@ -125,6 +130,7 @@ describe('Bot tests', function() {
     })
 
     it('should call handleTranslation if context is set', function(done) {
+      db.__setContext(true)
       payload.message.text = 'test message'
       payload.sender.id = userId
       spyOn(MessageHandler, 'handleTranslation')
@@ -137,6 +143,7 @@ describe('Bot tests', function() {
     })
 
     it('should NOT call handleTranslation if no context is set', function(done) {
+      db.__setContext(undefined)
       payload.sender.id = 'helloUser'
       payload.message.text = 'test message'
       spyOn(MessageHandler, 'handleTranslation')
@@ -177,7 +184,6 @@ describe('Bot tests', function() {
         done()
       })
     })
-
   })
 
   describe('Postback handlers', function() {

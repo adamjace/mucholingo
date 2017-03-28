@@ -1,6 +1,7 @@
 'use strict'
 
 const Promise = require('bluebird')
+const ProfileHandler = require('./profile')
 const t = require('../lib/translator')
 const Logger = require('../lib/logger')
 const languages = require('../lib/lang')
@@ -41,26 +42,7 @@ const examples = [
 class MessageHandler {
 
   constructor(bot) {
-    this.bot = bot
-  }
-
-  // pseudo middleware handler
-  next(sender) {
-    let next = this.bot
-    const profile = state.get(sender.id)
-    if (profile !== undefined) {
-      next = {
-        getProfile: (id, cb) => {
-          cb(null, profile)
-        }
-      }
-    }
-    return next
-  }
-
-  // typing sends a typing response to the recipient
-  typing(sender) {
-    this.bot.setTyping(sender.id, true)
+    this.profileHandler = new ProfileHandler(bot)
   }
 
   // handleMessage is our main handler
@@ -76,8 +58,9 @@ class MessageHandler {
 
     return new Promise((resolve) => {
 
-      this.next(sender).getProfile(sender.id, (err, profile) => {
+      this.profileHandler.getProfile(sender, (err, profile) => {
         if (err) return Logger.log(`getProfileError: ${JSON.stringify(err)}`)
+
         // cache the user for subsequent requests
         state.set(sender.id, profile)
 
