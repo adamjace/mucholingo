@@ -5,15 +5,20 @@ const languages = require('../src/lib/lang')
 const repo = require('../src/db/repo')
 const db = require('../src/db/redis')
 const state = require('../src/lib/state')
+const _const = require('../src/lib/constants')
 const _MessageHandler = require('../src/handler/message')
 
+let lastReply = '';
 const userId = 'testUserId'
-const reply = jest.fn()
+
+const reply = ({text}) => {
+  lastReply = text
+}
 
 const profile = {
   first_name: 'Jon',
   last_name: 'Doe',
-  locale: 'en_AU'
+  locale: 'es_AU'
 }
 
 const bot = {
@@ -114,12 +119,13 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleHelp')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
 
     it('should NOT call handleHelp if context is set', function(done) {
-      db.__setContext('I have context')
+      db.__setContext(true)
       payload.message.text = 'help'
       payload.sender.id = userId
       spyOn(MessageHandler, 'handleHelp')
@@ -138,13 +144,14 @@ describe('Bot tests', function() {
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleTranslation).toHaveBeenCalled()
         expect(MessageHandler.handleNoContext).not.toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
 
     it('should NOT call handleTranslation if no context is set', function(done) {
       db.__setContext(undefined)
-      payload.sender.id = 'helloUser'
+      payload.sender.id = userId
       payload.message.text = 'test message'
       spyOn(MessageHandler, 'handleTranslation')
       spyOn(MessageHandler, 'handleNoContext')
@@ -160,6 +167,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleSetContext')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -181,6 +189,7 @@ describe('Bot tests', function() {
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -200,9 +209,11 @@ describe('Bot tests', function() {
 
     it('should call handleGetStarted postback', function(done) {
       payload.postback.payload = '#getstarted'
+      const reply = {}
       spyOn(MessageHandler, 'handleGetStarted')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleGetStarted).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -212,6 +223,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleHelp')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -221,6 +233,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleReset')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleReset).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -230,6 +243,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleSwitch')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSwitch).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -239,6 +253,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleShowAllLanguages')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleShowAllLanguages).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -249,6 +264,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleHelp')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -341,11 +357,11 @@ describe('Bot tests', function() {
     })
 
     it('should test that smart example is never undefined', function() {
-      expect(privates.getSmartExample({locale: 'en_AU'}).split(' ')).not.toContain('undefined')
-      expect(privates.getSmartExample({locale: 'en+test'}).split(' ')).not.toContain('undefined')
-      expect(privates.getSmartExample({locale: ''}).split(' ')).not.toContain('undefined')
-      expect(privates.getSmartExample({}).split(' ')).not.toContain('undefined')
-      expect(privates.getSmartExample().split(' ')).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: 'en_AU'})).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: 'en+test'})).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: ''})).not.toContain('undefined')
+      expect(privates.getContextSuggestion({})).not.toContain('undefined')
+      expect(privates.getContextSuggestion()).not.toContain('undefined')
     })
 
     it('should get all language names', function() {

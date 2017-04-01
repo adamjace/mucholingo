@@ -1,6 +1,7 @@
 'use strict'
 
 const maxTextReplyLength = 320
+const lostInTranslation = 'I\'m lost for words...'
 
 const responseType = {
   help: '#help',
@@ -29,6 +30,7 @@ const languageExamples = [
 
 module.exports = {
   maxTextReplyLength: maxTextReplyLength,
+  lostInTranslation: lostInTranslation,
   responseType: responseType,
   baseHelpOptions: baseHelpOptions,
   helpQuickReply: helpQuickReply,

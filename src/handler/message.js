@@ -2,8 +2,9 @@
 
 const Promise = require('bluebird')
 const ProfileHandler = require('./profile')
-const t = require('../lib/translator')
 const Logger = require('../lib/logger')
+const Localise = require('../locale/localise')
+const translate = require('../lib/translator')
 const languages = require('../lib/lang')
 const mixpanel = require('../lib/mixpanel')
 const state = require('../lib/state')
@@ -39,82 +40,85 @@ class MessageHandler {
       this.profileHandler.getProfile(sender, (err, profile) => {
 
         if (err) {
-          Logger.log(`getProfileError: ${JSON.stringify(err)}`)
+          Logger.log(`getProfile error: ${JSON.stringify(err)}`)
           reject(err)
         }
 
         // cache the user for subsequent requests
         state.set(sender.id, profile)
 
+        // create new localised translator
+        // this is used for conversations between the bot and the user
+        const t = new Localise(getLocale(profile))
+
         // retrieve the users context (their translation mode) from state if it
         // exists, otherwise perform a fetch from redis
         repo(sender.id).get().then((response, err) => {
 
           if (err) {
-            Logger.log(`getAsyncError: ${JSON.stringify(err)}`)
+            Logger.log(`redis get error: ${JSON.stringify(err)}`)
             reject(err)
           }
 
-          const { context } = response
-
           if (postback && postback.payload) {
-            return resolve(this.handlePostBack(context, postback, profile, sender, reply))
+            return resolve(this.handlePostBack(response.context, postback, profile, sender, reply, t))
           }
           else if (message && message.quick_reply && message.quick_reply.payload) {
-            return resolve(this.handlePostBack(context, message.quick_reply, profile, sender, reply))
+            return resolve(this.handlePostBack(response.context, message.quick_reply, profile, sender, reply, t))
           }
           else if (!message.text) {
             return resolve(false)
           }
-          else if (_.includes(message.text.toLowerCase(), 'help') && !context) {
-            return resolve(this.handleHelp(context, profile, sender, reply))
+          else if (_.includes(message.text.toLowerCase(), t.say('help')) && !response.context) {
+            return resolve(this.handleHelp(response.context, profile, sender, reply, t))
           }
           else if (message.text === _const.responseType.reset || message.text === _const.responseType.switch) {
-            return resolve(this.handlePostBack(context, {payload: message.text}, profile, sender, reply))
+            return resolve(this.handlePostBack(response.context, {payload: message.text}, profile, sender, reply, t))
           }
-          else if (!context) {
-            return resolve(this.handleNoContext(sender, profile, message, reply))
+          else if (!response.context) {
+            return resolve(this.handleNoContext(sender, profile, message, reply, t))
           }
           else if (isPossibleChangeCommand(message.text)) {
             // we have context and the user has sent a text message, before translation check if this is
             // a possible direct change command: {lang} to {lang}
             const context = getContextFromMessage(message.text, true)
             if (context.hasTwo && context.from !== context.to) {
-              return (resolve(this.handleSetContext(context.code, context.from, context.to, sender, null, reply)))
+              return (resolve(this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)))
             }
           }
           // we made it! translate the message
-          return resolve(this.handleTranslation(context, sender, message, reply))
+          return resolve(this.handleTranslation(response.context, sender, message, reply, t))
         })
       })
     })
   }
 
   // handlePostBack
-  handlePostBack(context, postback, profile, sender, reply) {
+  handlePostBack(context, postback, profile, sender, reply, t) {
     Logger.log('handlePostBack')
     if (postback.payload === _const.responseType.getStarted) {
-      return this.handleGetStarted(sender, profile, reply)
+      return this.handleGetStarted(sender, profile, reply, t)
     }
     else if (postback.payload === _const.responseType.help) {
-      return this.handleHelp(context, profile, sender, reply)
+      return this.handleHelp(context, profile, sender, reply, t)
     }
     else if (postback.payload === _const.responseType.reset) {
-      return this.handleReset(sender, reply)
+      return this.handleReset(sender, reply, t)
     }
     else if (postback.payload === _const.responseType.switch) {
-      return this.handleSwitch(context, sender, reply)
+      return this.handleSwitch(context, sender, reply, t)
     }
     else if (postback.payload === _const.responseType.list) {
-      return this.handleShowAllLanguages(sender, reply)
+      return this.handleShowAllLanguages(sender, reply, t)
     }
   }
 
   // handleGetStarted
-  handleGetStarted(sender, profile, reply) {
+  handleGetStarted(sender, profile, reply, t) {
     Logger.log('handleGetStarted')
-    reply({
-      text: `Hola ${profile && profile.first_name}! Start by telling me what languages to translate for you. Say something like ${getSmartExample(profile)}\n\nAsk me for "help" at any time`
+    const suggestion = getContextSuggestion(profile)
+    return reply({
+      text: t.say('getting_started', profile && profile.first_name, suggestion[0], suggestion[1]),
     }, () => {
       mixpanel.setPerson(sender, profile)
       mixpanel.track('I click to get started', sender)
@@ -122,23 +126,24 @@ class MessageHandler {
   }
 
   // handleHelp
-  handleHelp(context, profile, sender, reply) {
+  handleHelp(context, profile, sender, reply, t) {
     Logger.log('handleHelp')
-    let text = `Hola. I see you've asked for some help... \n\nTell me what languages to translate by saying something like ${getSmartExample(profile)}`
+    const suggestion = getContextSuggestion(profile)
+    let text = t.say('ask_for_help', suggestion[0], suggestion[1])
     let options = _.clone(_const.baseHelpOptions)
 
     if (context) {
       context = getContextFromCode(context)
-      text = `Hola again. I see you've asked for some help...\n\nI'm currently translating everything you say from ${context.from} to ${context.to}\n\n`
+      text = t.say('ask_for_help_with_context', context.from, context.to)
       options.unshift(
         {
           'type': 'postback',
-          'title': 'Reset',
+          'title': t.say('reset'),
           'payload': _const.responseType.reset
         },
         {
           'type': 'postback',
-          'title': `${context.to} to ${context.from}`,
+          'title': t.say('lang_to_lang', context.to, context.from),
           'payload': _const.responseType.switch
         }
       )
@@ -160,23 +165,23 @@ class MessageHandler {
 
   // handleShowAllLanguages
   // due to Facebook's payload size limit we need to chunk the list into seprate bits
-  handleShowAllLanguages(sender, reply) {
+  handleShowAllLanguages(sender, reply, t) {
     const list = getAllLanguageNames()
     const first = list.splice(0, list.length / 3)
     const second = list.splice(0, list.length / 2)
-    reply({text: `OK, here goes...\n\n${first.toString().replace(/,/g, ', ')}`}, () => {
+    reply({text: `${t.say('ok_here_goes')}\n\n${first.toString().replace(/,/g, ', ')}`}, () => {
       reply({text: `${second.toString().replace(/,/g, ', ')}`}, () => {
-        reply({text: `${list.toString().replace(/,/g, ', ')}\n\n *GASP*`})
+        reply({text: `${list.toString().replace(/,/g, ', ')}\n\n ${t.say('gasp')}`})
       })
     })
   }
 
   // handleReset
-  handleReset(sender, reply) {
+  handleReset(sender, reply, t) {
     repo(sender.id).set('').then((err) => {
       if (err) Logger.log(err)
       return reply({
-        text: 'OK, what should I translate for you next?'
+        text: t.say('translate_next')
       }, () => {
         mixpanel.track('I reset context', sender)
       })
@@ -184,24 +189,24 @@ class MessageHandler {
   }
 
   // handleSwitch
-  handleSwitch(context, sender, reply) {
+  handleSwitch(context, sender, reply, t) {
     context = switchContext(getContextFromCode(context))
-    return this.handleSetContext(context.code, context.from, context.to, sender, null, reply)
+    return this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)
   }
 
   // handleNoContext
-  handleNoContext(sender, profile, message, reply) {
+  handleNoContext(sender, profile, message, reply, t) {
     Logger.log('handleNoContext')
     const context = getContextFromMessage(message.text)
     if (context.hasTwo && context.from !== context.to) {
-      return this.handleSetContext(context.code, context.from, context.to, sender, message, reply)
+      return this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t)
     }
-    if (this.handleGeneralResponse(sender, profile, message, reply) !== false) {
+    if (this.handleGeneralResponse(sender, profile, message, reply, t) !== false) {
       return
     }
 
-    let text = 'Oops, I didn\'t quite catch that. Ask me for "help" at anytime'
-    if (context.hasOne) text = `I only caught ${context.from} in there. Try again, or ask me for "help"`
+    let text = t.say('unreconised')
+    if (context.hasOne) text = t.say('part_unrecognised', context.from)
     return reply({
       text: text
     }, () => {
@@ -218,7 +223,7 @@ class MessageHandler {
         mixpanel.track('I say goodbye without context', sender, message)
       })
     }
-    if (_.includes(['hello', 'hi', 'howdy', 'hallo', 'yo', 'hey', 'sup', 'hiya'], message.text.toLowerCase())) {
+    if (_.includes(['hello', 'hi', 'howdy', 'hallo', 'yo', 'hey', 'sup', 'hiya', 'hola'], message.text.toLowerCase())) {
       return reply({
         text: getRandom([`Hi ${profile.first_name}!`, 'Hello', '¡Hola!', `Hey ${profile.first_name}!`, 'Oh hey there!', 'Hallo', 'Howdy', 'Oh Hiiiiii'])
       }, () => {
@@ -232,12 +237,12 @@ class MessageHandler {
   }
 
   // handleSetContext
-  handleSetContext(code, from, to, sender, message, reply) {
+  handleSetContext(code, from, to, sender, message, reply, t) {
     Logger.log('handleSetContext')
     repo(sender.id).set(code).then((err) => {
       if (err) Logger.log(err)
       return reply({
-        text: `${from} to ${to}. Got it! Now go ahead and tell me what to say.`
+        text: t.say('set_context', from, to)
       }, () => {
         mixpanel.track('I set context', sender, message)
       })
@@ -245,16 +250,16 @@ class MessageHandler {
   }
 
   // handleTranslation
-  handleTranslation(context, sender, message, reply) {
+  handleTranslation(context, sender, message, reply, t) {
     let response = {}
-    t.translate(message.text, context).
+    translate(message.text, context).
       then((result) => {
         if (result.length > _const.maxTextReplyLength) {
-          return reply({text: 'I\'m sorry, I can\'t translate all of that in one go. Try again with a smaller message'})
+          return reply({text: t.say('too_long')})
         }
         response.text = result
         // check if the user actually wants help by passing a quick reply button with the translated text
-        if (_.includes(message.text.toLowerCase(), 'help')) {
+        if (_.includes(message.text.toLowerCase(), t.say('help'))) {
           response.quick_replies = [_const.helpQuickReply]
         }
         reply(response, (err) => {
@@ -264,7 +269,7 @@ class MessageHandler {
       }).
       catch((err) => {
         if (err) Logger.log(err)
-        reply({ text: 'Oh no, something has gone wrong. Please try that again' })
+        reply({ text: t.say('translation_error') })
       })
   }
 
@@ -277,8 +282,9 @@ class MessageHandler {
       switchContext: switchContext,
       getLanguageName: getLanguageName,
       getAllLanguageNames: getAllLanguageNames,
+      getLocale: getLocale,
       getLanguageNameLocale: getLanguageNameLocale,
-      getSmartExample: getSmartExample,
+      getContextSuggestion: getContextSuggestion,
       isPossibleChangeCommand: isPossibleChangeCommand
     }
   }
@@ -361,11 +367,16 @@ function getAllLanguageNames() {
   return list
 }
 
+// getLocale
+function getLocale(profile) {
+  if (!profile || (profile && !profile.locale || profile.locale.indexOf('_') === -1)) return
+  return profile.locale.split('_')[0]
+}
+
 // getLanguageNameLocale
 function getLanguageNameLocale(profile) {
-  if (!profile || (profile && !profile.locale || profile.locale.indexOf('_') === -1)) return
-  const code = profile.locale.split('_')[0]
-  return getLanguageName(code)
+  const code = getLocale(profile)
+  return code && getLanguageName(code)
 }
 
 // getRandom
@@ -373,14 +384,14 @@ function getRandom(responses) {
   return responses[Math.floor(Math.random()*responses.length)]
 }
 
-// getSmartExample
-function getSmartExample(profile) {
+// getContextSuggestion
+function getContextSuggestion(profile) {
   const locale = getLanguageNameLocale(profile)
   let shuffled = shuffleArray(_.clone(_const.languageExamples))
-  if (!locale) return `"${shuffled[0]} to ${shuffled[1]}"`
+  if (!locale) return shuffled.splice(0, 2)
 
   shuffled = _.remove(shuffled, (n) => { return n !== locale })
-  return `"${locale} to ${shuffled[0]}"`
+  return [locale, shuffled[0]]
 }
 
 // shuffleArray

@@ -11,7 +11,7 @@
     "lint": "eslint ./src --ext .js",
     "test": "jest --no-cache || true"
   },
-  "author": "",
+  "author": "Adam Goldin",
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.4.1",
@@ -43,6 +43,7 @@
       "<rootDir>/src/db/repo",
       "<rootDir>/src/lib/state",
       "<rootDir>/src/lib/lang",
+      "<rootDir>/src/locale/",
       "<rootDir>/src/lib/constants",
       "<rootDir>/src/handler/message",
       "<rootDir>/src/handler/profile"
