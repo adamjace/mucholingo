@@ -1,6 +1,6 @@
 class Logger {
-  static log(message) {
-    console.log(message)
+  static log(type, message) {
+    console.log(`${type}: ${message}`)
   }
 }
 

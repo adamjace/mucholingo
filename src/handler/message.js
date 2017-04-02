@@ -6,7 +6,7 @@ const Logger = require('../lib/logger')
 const Localise = require('../locale/localise')
 const translate = require('../lib/translator')
 const languages = require('../lib/lang')
-const mixpanel = require('../lib/mixpanel')
+const mp = require('../lib/mixpanel')
 const state = require('../lib/state')
 const _const = require('../lib/constants')
 const repo = require('../db/repo')
@@ -40,7 +40,7 @@ class MessageHandler {
       this.profileHandler.getProfile(sender, (err, profile) => {
 
         if (err) {
-          Logger.log(`getProfile error: ${JSON.stringify(err)}`)
+          Logger.log('error', JSON.stringify(err))
           reject(err)
         }
 
@@ -56,7 +56,7 @@ class MessageHandler {
         repo(sender.id).get().then((response, err) => {
 
           if (err) {
-            Logger.log(`redis get error: ${JSON.stringify(err)}`)
+            Logger.log('error', JSON.stringify(err))
             reject(err)
           }
 
@@ -78,7 +78,7 @@ class MessageHandler {
           else if (!response.context) {
             return resolve(this.handleNoContext(sender, profile, message, reply, t))
           }
-          else if (isPossibleChangeCommand(message.text)) {
+          else if (isPossibleChangeCommand(message.text, t)) {
             // we have context and the user has sent a text message, before translation check if this is
             // a possible direct change command: {lang} to {lang}
             const context = getContextFromMessage(message.text, true)
@@ -95,7 +95,7 @@ class MessageHandler {
 
   // handlePostBack
   handlePostBack(context, postback, profile, sender, reply, t) {
-    Logger.log('handlePostBack')
+    Logger.log('info', 'handlePostBack')
     if (postback.payload === _const.responseType.getStarted) {
       return this.handleGetStarted(sender, profile, reply, t)
     }
@@ -115,22 +115,26 @@ class MessageHandler {
 
   // handleGetStarted
   handleGetStarted(sender, profile, reply, t) {
-    Logger.log('handleGetStarted')
+    Logger.log('info', 'handleGetStarted')
     const suggestion = getContextSuggestion(profile)
     return reply({
       text: t.say('getting_started', profile && profile.first_name, suggestion[0], suggestion[1]),
     }, () => {
-      mixpanel.setPerson(sender, profile)
-      mixpanel.track('I click to get started', sender)
+      mp.setPerson(sender, profile)
+      mp.track('I click to get started', sender)
     })
   }
 
   // handleHelp
   handleHelp(context, profile, sender, reply, t) {
-    Logger.log('handleHelp')
+    Logger.log('info', 'handleHelp')
     const suggestion = getContextSuggestion(profile)
     let text = t.say('ask_for_help', suggestion[0], suggestion[1])
-    let options = _.clone(_const.baseHelpOptions)
+    let options = [{
+      'type': 'postback',
+      'title': t.say('show_all_languages'),
+      'payload': _const.responseType.list
+    }]
 
     if (context) {
       context = getContextFromCode(context)
@@ -159,7 +163,7 @@ class MessageHandler {
         }
       }
     }, () => {
-      mixpanel.track('I ask for help', sender)
+      mp.track('I ask for help', sender)
     })
   }
 
@@ -179,11 +183,11 @@ class MessageHandler {
   // handleReset
   handleReset(sender, reply, t) {
     repo(sender.id).set('').then((err) => {
-      if (err) Logger.log(err)
+      if (err) Logger.log('error', err)
       return reply({
         text: t.say('translate_next')
       }, () => {
-        mixpanel.track('I reset context', sender)
+        mp.track('I reset context', sender)
       })
     })
   }
@@ -196,7 +200,7 @@ class MessageHandler {
 
   // handleNoContext
   handleNoContext(sender, profile, message, reply, t) {
-    Logger.log('handleNoContext')
+    Logger.log('info', 'handleNoContext')
     const context = getContextFromMessage(message.text)
     if (context.hasTwo && context.from !== context.to) {
       return this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t)
@@ -210,7 +214,7 @@ class MessageHandler {
     return reply({
       text: text
     }, () => {
-      mixpanel.track('I incorrectly set context', sender, message)
+      mp.track('I incorrectly set context', sender, message)
     })
   }
 
@@ -220,14 +224,14 @@ class MessageHandler {
       return reply({
         text: `Adiós ${profile.gender === 'male' ? 'muchacho' : 'muchacha'}`
       }, () => {
-        mixpanel.track('I say goodbye without context', sender, message)
+        mp.track('I say goodbye without context', sender, message)
       })
     }
     if (_.includes(['hello', 'hi', 'howdy', 'hallo', 'yo', 'hey', 'sup', 'hiya', 'hola'], message.text.toLowerCase())) {
       return reply({
         text: getRandom([`Hi ${profile.first_name}!`, 'Hello', '¡Hola!', `Hey ${profile.first_name}!`, 'Oh hey there!', 'Hallo', 'Howdy', 'Oh Hiiiiii'])
       }, () => {
-        mixpanel.track('I say hello without context', sender, message)
+        mp.track('I say hello without context', sender, message)
       })
     }
     if (_.includes(message.text.toLowerCase(), 'hmm')) {
@@ -238,13 +242,13 @@ class MessageHandler {
 
   // handleSetContext
   handleSetContext(code, from, to, sender, message, reply, t) {
-    Logger.log('handleSetContext')
+    Logger.log('info', 'handleSetContext')
     repo(sender.id).set(code).then((err) => {
-      if (err) Logger.log(err)
+      if (err) Logger.log('error', err)
       return reply({
         text: t.say('set_context', from, to)
       }, () => {
-        mixpanel.track('I set context', sender, message)
+        mp.track('I set context', sender, message)
       })
     })
   }
@@ -260,15 +264,19 @@ class MessageHandler {
         response.text = result
         // check if the user actually wants help by passing a quick reply button with the translated text
         if (_.includes(message.text.toLowerCase(), t.say('help'))) {
-          response.quick_replies = [_const.helpQuickReply]
+          response.quick_replies = [{
+            'content_type': 'text',
+            'title': t.say('need_help?'),
+            'payload': '#help'
+          }]
         }
         reply(response, (err) => {
-          if (err) Logger.log(err)
-          mixpanel.track('I send a message to be translated', sender, message)
+          if (err) Logger.log('error', err)
+          mp.track('I send a message to be translated', sender, message)
         })
       }).
       catch((err) => {
-        if (err) Logger.log(err)
+        if (err) Logger.log('error', err)
         reply({ text: t.say('translation_error') })
       })
   }
@@ -406,9 +414,9 @@ function shuffleArray(array) {
 }
 
 // isPossibleChangeCommand
-function isPossibleChangeCommand(message) {
+function isPossibleChangeCommand(message, t) {
   const words = message.split(' ')
-  return words.length === 3 && words[1] === 'to'
+  return words.length === 3 && words[1] === t.say('to')
 }
 
 module.exports = MessageHandler

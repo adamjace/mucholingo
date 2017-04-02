@@ -7,6 +7,7 @@ const db = require('../src/db/redis')
 const state = require('../src/lib/state')
 const _const = require('../src/lib/constants')
 const _MessageHandler = require('../src/handler/message')
+const Localise = require('../src/locale/localise')
 
 let lastReply = '';
 const userId = 'testUserId'
@@ -369,12 +370,13 @@ describe('Bot tests', function() {
     })
 
     it('should detect possible change commands', function() {
-      expect(privates.isPossibleChangeCommand('english to spanish')).toEqual(true)
-      expect(privates.isPossibleChangeCommand('a to b')).toEqual(true)
-      expect(privates.isPossibleChangeCommand('english dutch')).toEqual(false)
-      expect(privates.isPossibleChangeCommand('english romanian spanish')).toEqual(false)
-      expect(privates.isPossibleChangeCommand('english to')).toEqual(false)
-      expect(privates.isPossibleChangeCommand('blah_to_blah')).toEqual(false)
+      const t = new Localise(privates.getLocale(profile))
+      expect(privates.isPossibleChangeCommand('english to spanish', t)).toEqual(true)
+      expect(privates.isPossibleChangeCommand('a to b', t)).toEqual(true)
+      expect(privates.isPossibleChangeCommand('english dutch', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english romanian spanish', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english to', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('blah_to_blah', t)).toEqual(false)
     })
   })
 })
