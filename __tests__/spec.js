@@ -19,7 +19,7 @@ const reply = ({text}) => {
 const profile = {
   first_name: 'Jon',
   last_name: 'Doe',
-  locale: 'es_AU'
+  locale: 'en_AU'
 }
 
 const bot = {
@@ -31,6 +31,7 @@ const bot = {
 
 const MessageHandler = new _MessageHandler(bot)
 const privates = MessageHandler._privates()
+const t = new Localise(privates.getLocale(profile))
 
 describe('Bot tests', function() {
 
@@ -274,7 +275,7 @@ describe('Bot tests', function() {
   describe('test private methods', function() {
 
     it('should get context from message without strict matching', function() {
-      let context = privates.getContextFromMessage('translate from english to spanish please')
+      let context = privates.getContextFromMessage('translate from english to spanish please', false, t)
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('English')
       expect(context.to).toEqual('Spanish')
@@ -284,7 +285,7 @@ describe('Bot tests', function() {
     })
 
     it('should get context from message with strict matching', function() {
-      let context = privates.getContextFromMessage('english to spanish', true)
+      let context = privates.getContextFromMessage('english to spanish', true, t)
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('English')
       expect(context.to).toEqual('Spanish')
@@ -294,7 +295,7 @@ describe('Bot tests', function() {
     })
 
     it('should NOT get context from message with strict matching', function() {
-      let context = privates.getContextFromMessage('translate from english to spanish please', true)
+      let context = privates.getContextFromMessage('translate from english to spanish please', true, t)
       expect(context.code).toEqual(undefined)
       expect(context.from).toEqual(undefined)
       expect(context.to).toEqual(undefined)
@@ -304,7 +305,7 @@ describe('Bot tests', function() {
     })
 
     it('should part get context from message', function() {
-      let context = privates.getContextFromMessage('french to blahh')
+      let context = privates.getContextFromMessage('french to blahh', false, t)
       expect(context.code).toEqual(undefined)
       expect(context.from).toEqual('French')
       expect(context.to).toEqual(undefined)
@@ -314,7 +315,7 @@ describe('Bot tests', function() {
     })
 
     it('should NOT get context from message', function() {
-      let context = privates.getContextFromMessage('ping to pong')
+      let context = privates.getContextFromMessage('ping to pong', false, t)
       expect(context.code).toEqual(undefined)
       expect(context.from).toEqual(undefined)
       expect(context.to).toEqual(undefined)
@@ -324,7 +325,7 @@ describe('Bot tests', function() {
     })
 
     it('should get context from code', function() {
-      let context = privates.getContextFromCode('fr:de')
+      let context = privates.getContextFromCode('fr:de', t)
       expect(context.code).toEqual('fr:de')
       expect(context.from).toEqual('French')
       expect(context.to).toEqual('German')
@@ -340,39 +341,125 @@ describe('Bot tests', function() {
     })
 
     it('should get language name', function() {
-      expect(privates.getLanguageName('en')).toEqual('English')
-      expect(privates.getLanguageName('es')).toEqual('Spanish')
-      expect(privates.getLanguageName('el')).toEqual('Greek')
-      expect(privates.getLanguageName('zh-CN')).toEqual('Chinese')
+      expect(privates.getLanguageName('en', t)).toEqual('English')
+      expect(privates.getLanguageName('es', t)).toEqual('Spanish')
+      expect(privates.getLanguageName('el', t)).toEqual('Greek')
+      expect(privates.getLanguageName('zh-CN', t)).toEqual('Chinese')
+
+      const profile = { first_name: 'Jon', last_name: 'Doe', locale: 'es_AU'}
+      const _t = new Localise(privates.getLocale(profile))
+      expect(privates.getLanguageName('zh-CN', _t)).toEqual('Chino')
+      expect(privates.getLanguageName('en', _t)).toEqual('Inglés')
+      expect(privates.getLanguageName('es', _t)).toEqual('Español')
+      expect(privates.getLanguageName('hu', _t)).toEqual('Húngaro')
     })
 
     it('should get language name from locale', function() {
-      expect(privates.getLanguageNameLocale({locale: 'en_AU'})).toEqual('English')
-      expect(privates.getLanguageNameLocale({locale: 'en_GB'})).toEqual('English')
-      expect(privates.getLanguageNameLocale({locale: 'es_ES'})).toEqual('Spanish')
-      expect(privates.getLanguageNameLocale({locale: 'de_DE'})).toEqual('German')
-      expect(privates.getLanguageNameLocale({locale: 'cs_CZ'})).toEqual('Czech')
-      expect(privates.getLanguageNameLocale({locale: 'nothing'})).toEqual(undefined)
-      expect(privates.getLanguageNameLocale({})).toEqual(undefined)
-      expect(privates.getLanguageNameLocale(null)).toEqual(undefined)
+      expect(privates.getLanguageNameLocale({locale: 'en_AU'}, t)).toEqual('English')
+      expect(privates.getLanguageNameLocale({locale: 'en_GB'}, t)).toEqual('English')
+      expect(privates.getLanguageNameLocale({locale: 'es_ES'}, t)).toEqual('Spanish')
+      expect(privates.getLanguageNameLocale({locale: 'de_DE'}, t)).toEqual('German')
+      expect(privates.getLanguageNameLocale({locale: 'cs_CZ'}, t)).toEqual('Czech')
+      expect(privates.getLanguageNameLocale({locale: 'nothing'}, t)).toEqual(undefined)
+      expect(privates.getLanguageNameLocale({}, t)).toEqual(undefined)
+      expect(privates.getLanguageNameLocale(null, t)).toEqual(undefined)
     })
 
     it('should test that smart example is never undefined', function() {
-      expect(privates.getContextSuggestion({locale: 'en_AU'})).not.toContain('undefined')
-      expect(privates.getContextSuggestion({locale: 'en+test'})).not.toContain('undefined')
-      expect(privates.getContextSuggestion({locale: ''})).not.toContain('undefined')
-      expect(privates.getContextSuggestion({})).not.toContain('undefined')
-      expect(privates.getContextSuggestion()).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: 'en_AU'}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: 'en+test'}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: ''}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion(), t).not.toContain('undefined')
     })
 
     it('should get all language names', function() {
-      expect(privates.getAllLanguageNames().length).toEqual(91)
+      expect(privates.getAllLanguageNames(t).length).toEqual(91)
     })
 
     it('should detect possible change commands', function() {
-      const t = new Localise(privates.getLocale(profile))
       expect(privates.isPossibleChangeCommand('english to spanish', t)).toEqual(true)
       expect(privates.isPossibleChangeCommand('a to b', t)).toEqual(true)
+      expect(privates.isPossibleChangeCommand('english dutch', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english romanian spanish', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english to', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('blah_to_blah', t)).toEqual(false)
+    })
+  })
+
+  describe('Test private methods with Spanish locale', function() {
+
+    const t = new Localise(privates.getLocale({locale: 'es_GB'}))
+
+    it('(in Spanish) should get context from message without strict matching', function() {
+      let context = privates.getContextFromMessage('como se dice inglés a español por favor', false, t)
+      expect(context.code).toEqual('en:es')
+      expect(context.from).toEqual('Inglés')
+      expect(context.to).toEqual('Español')
+      expect(context.hasTwo).toEqual(true)
+      expect(context.hasOne).toEqual(false)
+      expect(context.hasNone).toEqual(false)
+    })
+
+    it('(in Spanish) should get context from message with strict matching', function() {
+      let context = privates.getContextFromMessage('inglés a español', true, t)
+      expect(context.code).toEqual('en:es')
+      expect(context.from).toEqual('Inglés')
+      expect(context.to).toEqual('Español')
+      expect(context.hasTwo).toEqual(true)
+      expect(context.hasOne).toEqual(false)
+      expect(context.hasNone).toEqual(false)
+    })
+
+    it('(in Spanish) should get context from code', function() {
+      let context = privates.getContextFromCode('fr:de', t)
+      expect(context.code).toEqual('fr:de')
+      expect(context.from).toEqual('Francés')
+      expect(context.to).toEqual('Alemán')
+      expect(context.hasTwo).toEqual(true)
+    })
+
+    it('(in Spanish) should switch context', function() {
+      const context = { code: 'en:ru', from: 'Inglés', to: 'Ruso' }
+      const switched = privates.switchContext(context)
+      expect(context.code).toEqual('ru:en')
+      expect(context.from).toEqual('Ruso')
+      expect(context.to).toEqual('Inglés')
+    })
+
+    it('(in Spanish) should get language name', function() {
+      expect(privates.getLanguageName('zh-CN', t)).toEqual('Chino')
+      expect(privates.getLanguageName('en', t)).toEqual('Inglés')
+      expect(privates.getLanguageName('es', t)).toEqual('Español')
+      expect(privates.getLanguageName('hu', t)).toEqual('Húngaro')
+    })
+
+    it('(in Spanish) should get language name from locale', function() {
+      expect(privates.getLanguageNameLocale({locale: 'en_AU'}, t)).toEqual('Inglés')
+      expect(privates.getLanguageNameLocale({locale: 'en_GB'}, t)).toEqual('Inglés')
+      expect(privates.getLanguageNameLocale({locale: 'es_ES'}, t)).toEqual('Español')
+      expect(privates.getLanguageNameLocale({locale: 'de_DE'}, t)).toEqual('Alemán')
+      expect(privates.getLanguageNameLocale({locale: 'cs_CZ'}, t)).toEqual('Checo')
+      expect(privates.getLanguageNameLocale({locale: 'nothing'}, t)).toEqual(undefined)
+      expect(privates.getLanguageNameLocale({}, t)).toEqual(undefined)
+      expect(privates.getLanguageNameLocale(null, t)).toEqual(undefined)
+    })
+
+    it('(in Spanish) should test that smart example is never undefined', function() {
+      expect(privates.getContextSuggestion({locale: 'en_AU'}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: 'en+test'}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: ''}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion(), t).not.toContain('undefined')
+    })
+
+    it('(in Spanish) should get all language names', function() {
+      expect(privates.getAllLanguageNames(t).length).toEqual(91)
+    })
+
+    it('(in Spanish) should detect possible change commands', function() {
+      expect(privates.isPossibleChangeCommand('ingles a espanol', t)).toEqual(true)
+      expect(privates.isPossibleChangeCommand('alemana a zulu', t)).toEqual(true)
       expect(privates.isPossibleChangeCommand('english dutch', t)).toEqual(false)
       expect(privates.isPossibleChangeCommand('english romanian spanish', t)).toEqual(false)
       expect(privates.isPossibleChangeCommand('english to', t)).toEqual(false)

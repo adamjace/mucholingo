@@ -2,24 +2,29 @@ const util = require('util')
 const _const = require('../lib/constants')
 const _ = require('lodash')
 
-const path = './%s.js'
-const supported = ['en', 'es']
-const fallback = 'en'
+const supportedLanguages = ['en', 'es']
+const defaultIfNotSupported = 'en'
 
 class Localise {
 
-  constructor(locale) {
-    if (!_.includes(supported, locale)) {
-      locale = fallback
+  constructor(code) {
+    if (!_.includes(supportedLanguages, code)) {
+      code = defaultIfNotSupported
     }
-    this.locale = require(util.format(path, locale))
+
+    this.code = require(util.format('./%s.js', code))
+    this._languages = require(util.format('./lang/%s.js', code))
+  }
+
+  get languages() {
+    return this._languages
   }
 
   say(key, ...args) {
-    if (!this.locale[key]) {
+    if (!this.code[key]) {
       return _const.lostInTranslation
     }
-    return util.format(this.locale[key], ...args)
+    return util.format(this.code[key], ...args)
   }
 }
 

@@ -5,7 +5,6 @@ const ProfileHandler = require('./profile')
 const Logger = require('../lib/logger')
 const Localise = require('../locale/localise')
 const translate = require('../lib/translator')
-const languages = require('../lib/lang')
 const mp = require('../lib/mixpanel')
 const state = require('../lib/state')
 const _const = require('../lib/constants')
@@ -81,7 +80,7 @@ class MessageHandler {
           else if (isPossibleChangeCommand(message.text, t)) {
             // we have context and the user has sent a text message, before translation check if this is
             // a possible direct change command: {lang} to {lang}
-            const context = getContextFromMessage(message.text, true)
+            const context = getContextFromMessage(message.text, true, t)
             if (context.hasTwo && context.from !== context.to) {
               return (resolve(this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)))
             }
@@ -116,7 +115,7 @@ class MessageHandler {
   // handleGetStarted
   handleGetStarted(sender, profile, reply, t) {
     Logger.log('info', 'handleGetStarted')
-    const suggestion = getContextSuggestion(profile)
+    const suggestion = getContextSuggestion(profile, t)
     return reply({
       text: t.say('getting_started', profile && profile.first_name, suggestion[0], suggestion[1]),
     }, () => {
@@ -128,7 +127,7 @@ class MessageHandler {
   // handleHelp
   handleHelp(context, profile, sender, reply, t) {
     Logger.log('info', 'handleHelp')
-    const suggestion = getContextSuggestion(profile)
+    const suggestion = getContextSuggestion(profile, t)
     let text = t.say('ask_for_help', suggestion[0], suggestion[1])
     let options = [{
       'type': 'postback',
@@ -137,7 +136,7 @@ class MessageHandler {
     }]
 
     if (context) {
-      context = getContextFromCode(context)
+      context = getContextFromCode(context, t)
       text = t.say('ask_for_help_with_context', context.from, context.to)
       options.unshift(
         {
@@ -170,7 +169,7 @@ class MessageHandler {
   // handleShowAllLanguages
   // due to Facebook's payload size limit we need to chunk the list into seprate bits
   handleShowAllLanguages(sender, reply, t) {
-    const list = getAllLanguageNames()
+    const list = getAllLanguageNames(t)
     const first = list.splice(0, list.length / 3)
     const second = list.splice(0, list.length / 2)
     reply({text: `${t.say('ok_here_goes')}\n\n${first.toString().replace(/,/g, ', ')}`}, () => {
@@ -194,14 +193,14 @@ class MessageHandler {
 
   // handleSwitch
   handleSwitch(context, sender, reply, t) {
-    context = switchContext(getContextFromCode(context))
+    context = switchContext(getContextFromCode(context, t))
     return this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)
   }
 
   // handleNoContext
   handleNoContext(sender, profile, message, reply, t) {
     Logger.log('info', 'handleNoContext')
-    const context = getContextFromMessage(message.text)
+    const context = getContextFromMessage(message.text, false, t)
     if (context.hasTwo && context.from !== context.to) {
       return this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t)
     }
@@ -300,8 +299,8 @@ class MessageHandler {
 
 // private methods
 // getContextFromMessage
-function getContextFromMessage(message, strict) {
-  const ctxMatches = getContextMatches(message, strict)
+function getContextFromMessage(message, strict, t) {
+  const ctxMatches = getContextMatches(message, strict, t)
   const { hasTwo, hasOne, hasNone } = ctxMatches
   let code, from, to
   if (hasOne || hasTwo) {
@@ -315,23 +314,23 @@ function getContextFromMessage(message, strict) {
 }
 
 // getContextFromCode
-function getContextFromCode(code) {
+function getContextFromCode(code, t) {
   const codes = code.split(':')
   return {
     code,
-    from: getLanguageName(codes[0]),
-    to: getLanguageName(codes[1]),
+    from: getLanguageName(codes[0], t),
+    to: getLanguageName(codes[1], t),
     hasTwo: true
   }
 }
 
 // getContextMatches
-function getContextMatches(message, strict) {
+function getContextMatches(message, strict, t) {
   let matches = []
   const words = message.split(' ')
   if (!strict || (strict && words.length === 3)) {
     words.forEach((word) => {
-      languages.filter(item => item.name === _.lowerCase(word)).map((lang) => {
+      t.languages.filter(item => _.lowerCase(item.name) === _.lowerCase(word)).map((lang) => {
         if (matches.length === 2) return
         matches.push(lang)
       })
@@ -359,17 +358,17 @@ function switchContext(context) {
 }
 
 // getLanguageName
-function getLanguageName(code) {
-  const name = languages.filter(item => item.code === code).map((lang) => {
+function getLanguageName(code, t) {
+  const name = t.languages.filter(item => item.code === code).map((lang) => {
     return lang.name
   })
   if (name && name.length) return _.capitalize(name[0])
 }
 
 // listAllLanguages
-function getAllLanguageNames() {
+function getAllLanguageNames(t) {
   let list = []
-  languages.forEach(function(lang) {
+  t.languages.forEach(function(lang) {
     list.push(_.capitalize(lang.name))
   })
   return list
@@ -382,9 +381,9 @@ function getLocale(profile) {
 }
 
 // getLanguageNameLocale
-function getLanguageNameLocale(profile) {
+function getLanguageNameLocale(profile, t) {
   const code = getLocale(profile)
-  return code && getLanguageName(code)
+  return code && getLanguageName(code, t)
 }
 
 // getRandom
@@ -393,8 +392,8 @@ function getRandom(responses) {
 }
 
 // getContextSuggestion
-function getContextSuggestion(profile) {
-  const locale = getLanguageNameLocale(profile)
+function getContextSuggestion(profile, t) {
+  const locale = getLanguageNameLocale(profile, t)
   let shuffled = shuffleArray(_.clone(_const.languageExamples))
   if (!locale) return shuffled.splice(0, 2)
 

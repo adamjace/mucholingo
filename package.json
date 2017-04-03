@@ -42,7 +42,6 @@
       "<rootDir>/node_modules/lodash/",
       "<rootDir>/src/db/repo",
       "<rootDir>/src/lib/state",
-      "<rootDir>/src/lib/lang",
       "<rootDir>/src/locale/",
       "<rootDir>/src/lib/constants",
       "<rootDir>/src/handler/message",
