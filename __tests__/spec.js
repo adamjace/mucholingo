@@ -5,10 +5,16 @@ const languages = require('../src/lib/lang')
 const repo = require('../src/db/repo')
 const db = require('../src/db/redis')
 const state = require('../src/lib/state')
+const _const = require('../src/lib/constants')
 const _MessageHandler = require('../src/handler/message')
+const Localise = require('../src/locale/localise')
 
+let lastReply = '';
 const userId = 'testUserId'
-const reply = jest.fn()
+
+const reply = ({text}) => {
+  lastReply = text
+}
 
 const profile = {
   first_name: 'Jon',
@@ -25,6 +31,7 @@ const bot = {
 
 const MessageHandler = new _MessageHandler(bot)
 const privates = MessageHandler._privates()
+const t = new Localise(privates.getLocale(profile))
 
 describe('Bot tests', function() {
 
@@ -114,12 +121,13 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleHelp')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
 
     it('should NOT call handleHelp if context is set', function(done) {
-      db.__setContext('I have context')
+      db.__setContext(true)
       payload.message.text = 'help'
       payload.sender.id = userId
       spyOn(MessageHandler, 'handleHelp')
@@ -138,13 +146,14 @@ describe('Bot tests', function() {
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleTranslation).toHaveBeenCalled()
         expect(MessageHandler.handleNoContext).not.toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
 
     it('should NOT call handleTranslation if no context is set', function(done) {
       db.__setContext(undefined)
-      payload.sender.id = 'helloUser'
+      payload.sender.id = userId
       payload.message.text = 'test message'
       spyOn(MessageHandler, 'handleTranslation')
       spyOn(MessageHandler, 'handleNoContext')
@@ -160,6 +169,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleSetContext')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -181,6 +191,7 @@ describe('Bot tests', function() {
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -200,9 +211,11 @@ describe('Bot tests', function() {
 
     it('should call handleGetStarted postback', function(done) {
       payload.postback.payload = '#getstarted'
+      const reply = {}
       spyOn(MessageHandler, 'handleGetStarted')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleGetStarted).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -212,6 +225,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleHelp')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -221,6 +235,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleReset')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleReset).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -230,6 +245,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleSwitch')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSwitch).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -239,6 +255,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleShowAllLanguages')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleShowAllLanguages).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -249,6 +266,7 @@ describe('Bot tests', function() {
       spyOn(MessageHandler, 'handleHelp')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })
     })
@@ -257,7 +275,7 @@ describe('Bot tests', function() {
   describe('test private methods', function() {
 
     it('should get context from message without strict matching', function() {
-      let context = privates.getContextFromMessage('translate from english to spanish please')
+      let context = privates.getContextFromMessage('translate from english to spanish please', false, t)
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('English')
       expect(context.to).toEqual('Spanish')
@@ -267,7 +285,7 @@ describe('Bot tests', function() {
     })
 
     it('should get context from message with strict matching', function() {
-      let context = privates.getContextFromMessage('english to spanish', true)
+      let context = privates.getContextFromMessage('english to spanish', true, t)
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('English')
       expect(context.to).toEqual('Spanish')
@@ -277,7 +295,7 @@ describe('Bot tests', function() {
     })
 
     it('should NOT get context from message with strict matching', function() {
-      let context = privates.getContextFromMessage('translate from english to spanish please', true)
+      let context = privates.getContextFromMessage('translate from english to spanish please', true, t)
       expect(context.code).toEqual(undefined)
       expect(context.from).toEqual(undefined)
       expect(context.to).toEqual(undefined)
@@ -287,7 +305,7 @@ describe('Bot tests', function() {
     })
 
     it('should part get context from message', function() {
-      let context = privates.getContextFromMessage('french to blahh')
+      let context = privates.getContextFromMessage('french to blahh', false, t)
       expect(context.code).toEqual(undefined)
       expect(context.from).toEqual('French')
       expect(context.to).toEqual(undefined)
@@ -297,7 +315,7 @@ describe('Bot tests', function() {
     })
 
     it('should NOT get context from message', function() {
-      let context = privates.getContextFromMessage('ping to pong')
+      let context = privates.getContextFromMessage('ping to pong', false, t)
       expect(context.code).toEqual(undefined)
       expect(context.from).toEqual(undefined)
       expect(context.to).toEqual(undefined)
@@ -307,7 +325,7 @@ describe('Bot tests', function() {
     })
 
     it('should get context from code', function() {
-      let context = privates.getContextFromCode('fr:de')
+      let context = privates.getContextFromCode('fr:de', t)
       expect(context.code).toEqual('fr:de')
       expect(context.from).toEqual('French')
       expect(context.to).toEqual('German')
@@ -323,42 +341,124 @@ describe('Bot tests', function() {
     })
 
     it('should get language name', function() {
-      expect(privates.getLanguageName('en')).toEqual('English')
-      expect(privates.getLanguageName('es')).toEqual('Spanish')
-      expect(privates.getLanguageName('el')).toEqual('Greek')
-      expect(privates.getLanguageName('zh-CN')).toEqual('Chinese')
+      expect(privates.getLanguageName('en', t)).toEqual('English')
+      expect(privates.getLanguageName('es', t)).toEqual('Spanish')
+      expect(privates.getLanguageName('el', t)).toEqual('Greek')
+      expect(privates.getLanguageName('zh-CN', t)).toEqual('Chinese')
     })
 
     it('should get language name from locale', function() {
-      expect(privates.getLanguageNameLocale({locale: 'en_AU'})).toEqual('English')
-      expect(privates.getLanguageNameLocale({locale: 'en_GB'})).toEqual('English')
-      expect(privates.getLanguageNameLocale({locale: 'es_ES'})).toEqual('Spanish')
-      expect(privates.getLanguageNameLocale({locale: 'de_DE'})).toEqual('German')
-      expect(privates.getLanguageNameLocale({locale: 'cs_CZ'})).toEqual('Czech')
-      expect(privates.getLanguageNameLocale({locale: 'nothing'})).toEqual(undefined)
-      expect(privates.getLanguageNameLocale({})).toEqual(undefined)
-      expect(privates.getLanguageNameLocale(null)).toEqual(undefined)
+      expect(privates.getLanguageNameLocale({locale: 'en_AU'}, t)).toEqual('English')
+      expect(privates.getLanguageNameLocale({locale: 'en_GB'}, t)).toEqual('English')
+      expect(privates.getLanguageNameLocale({locale: 'es_ES'}, t)).toEqual('Spanish')
+      expect(privates.getLanguageNameLocale({locale: 'de_DE'}, t)).toEqual('German')
+      expect(privates.getLanguageNameLocale({locale: 'cs_CZ'}, t)).toEqual('Czech')
+      expect(privates.getLanguageNameLocale({locale: 'nothing'}, t)).toEqual(undefined)
+      expect(privates.getLanguageNameLocale({}, t)).toEqual(undefined)
+      expect(privates.getLanguageNameLocale(null, t)).toEqual(undefined)
     })
 
     it('should test that smart example is never undefined', function() {
-      expect(privates.getSmartExample({locale: 'en_AU'}).split(' ')).not.toContain('undefined')
-      expect(privates.getSmartExample({locale: 'en+test'}).split(' ')).not.toContain('undefined')
-      expect(privates.getSmartExample({locale: ''}).split(' ')).not.toContain('undefined')
-      expect(privates.getSmartExample({}).split(' ')).not.toContain('undefined')
-      expect(privates.getSmartExample().split(' ')).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: 'en_AU'}, t)[0]).toEqual('English')
+      expect(privates.getContextSuggestion({locale: 'en_AU'}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: 'en+test'}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: ''}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion(undefined, t)).not.toContain('undefined')
     })
 
     it('should get all language names', function() {
-      expect(privates.getAllLanguageNames().length).toEqual(91)
+      expect(privates.getAllLanguageNames(t).length).toEqual(91)
     })
 
     it('should detect possible change commands', function() {
-      expect(privates.isPossibleChangeCommand('english to spanish')).toEqual(true)
-      expect(privates.isPossibleChangeCommand('a to b')).toEqual(true)
-      expect(privates.isPossibleChangeCommand('english dutch')).toEqual(false)
-      expect(privates.isPossibleChangeCommand('english romanian spanish')).toEqual(false)
-      expect(privates.isPossibleChangeCommand('english to')).toEqual(false)
-      expect(privates.isPossibleChangeCommand('blah_to_blah')).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english to spanish', t)).toEqual(true)
+      expect(privates.isPossibleChangeCommand('a to b', t)).toEqual(true)
+      expect(privates.isPossibleChangeCommand('english dutch', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english romanian spanish', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english to', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('blah_to_blah', t)).toEqual(false)
+    })
+  })
+
+  describe('Test private methods with Spanish locale', function() {
+
+    const t = new Localise(privates.getLocale({locale: 'es_GB'}))
+
+    it('(in Spanish) should get context from message without strict matching', function() {
+      let context = privates.getContextFromMessage('como se dice inglés a español por favor', false, t)
+      expect(context.code).toEqual('en:es')
+      expect(context.from).toEqual('Inglés')
+      expect(context.to).toEqual('Español')
+      expect(context.hasTwo).toEqual(true)
+      expect(context.hasOne).toEqual(false)
+      expect(context.hasNone).toEqual(false)
+    })
+
+    it('(in Spanish) should get context from message with strict matching', function() {
+      let context = privates.getContextFromMessage('inglés a español', true, t)
+      expect(context.code).toEqual('en:es')
+      expect(context.from).toEqual('Inglés')
+      expect(context.to).toEqual('Español')
+      expect(context.hasTwo).toEqual(true)
+      expect(context.hasOne).toEqual(false)
+      expect(context.hasNone).toEqual(false)
+    })
+
+    it('(in Spanish) should get context from code', function() {
+      let context = privates.getContextFromCode('fr:de', t)
+      expect(context.code).toEqual('fr:de')
+      expect(context.from).toEqual('Francés')
+      expect(context.to).toEqual('Alemán')
+      expect(context.hasTwo).toEqual(true)
+    })
+
+    it('(in Spanish) should switch context', function() {
+      const context = { code: 'en:ru', from: 'Inglés', to: 'Ruso' }
+      const switched = privates.switchContext(context)
+      expect(context.code).toEqual('ru:en')
+      expect(context.from).toEqual('Ruso')
+      expect(context.to).toEqual('Inglés')
+    })
+
+    it('(in Spanish) should get language name', function() {
+      expect(privates.getLanguageName('zh-CN', t)).toEqual('Chino')
+      expect(privates.getLanguageName('en', t)).toEqual('Inglés')
+      expect(privates.getLanguageName('es', t)).toEqual('Español')
+      expect(privates.getLanguageName('hu', t)).toEqual('Húngaro')
+    })
+
+    it('(in Spanish) should get language name from locale', function() {
+      expect(privates.getLanguageNameLocale({locale: 'en_AU'}, t)).toEqual('Inglés')
+      expect(privates.getLanguageNameLocale({locale: 'en_GB'}, t)).toEqual('Inglés')
+      expect(privates.getLanguageNameLocale({locale: 'es_ES'}, t)).toEqual('Español')
+      expect(privates.getLanguageNameLocale({locale: 'de_DE'}, t)).toEqual('Alemán')
+      expect(privates.getLanguageNameLocale({locale: 'cs_CZ'}, t)).toEqual('Checo')
+      expect(privates.getLanguageNameLocale({locale: 'nothing'}, t)).toEqual(undefined)
+      expect(privates.getLanguageNameLocale({}, t)).toEqual(undefined)
+      expect(privates.getLanguageNameLocale(null, t)).toEqual(undefined)
+    })
+
+    it('(in Spanish) should test that smart example is never undefined', function() {
+      expect(privates.getContextSuggestion({locale: 'es_UK'}, t)[0]).toEqual('Español')
+      expect(privates.getContextSuggestion({locale: 'es_UK'}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: 'es+test'}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: ''}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion(undefined, t)).not.toContain('undefined')
+    })
+
+    it('(in Spanish) should get all language names', function() {
+      expect(privates.getAllLanguageNames(t).length).toEqual(91)
+    })
+
+    it('(in Spanish) should detect possible change commands', function() {
+      expect(privates.isPossibleChangeCommand('ingles a espanol', t)).toEqual(true)
+      expect(privates.isPossibleChangeCommand('alemana a zulu', t)).toEqual(true)
+      expect(privates.isPossibleChangeCommand('english dutch', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english romanian spanish', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('english to', t)).toEqual(false)
+      expect(privates.isPossibleChangeCommand('blah_to_blah', t)).toEqual(false)
     })
   })
 })

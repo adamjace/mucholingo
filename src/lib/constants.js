@@ -1,6 +1,7 @@
 'use strict'
 
 const maxTextReplyLength = 320
+const lostInTranslation = 'Lost in translation'
 
 const responseType = {
   help: '#help',
@@ -10,27 +11,14 @@ const responseType = {
   list: '#list'
 }
 
-const baseHelpOptions = [{
-  'type': 'postback',
-  'title': 'Show all languages',
-  'payload': responseType.list
-}]
-
-const helpQuickReply = {
-  'content_type': 'text',
-  'title': 'Need help?',
-  'payload': '#help'
-}
-
 const languageExamples = [
-  'English', 'German', 'Italian', 'Korean', 'Dutch', 'Japanese', 'Hindi',
-  'Spanish', 'French', 'Indonesian', 'Russian', 'Chinese', 'Greek'
+  'en', 'de', 'it', 'ko', 'nl', 'jp', 'hi',
+  'es', 'fr', 'id', 'ru', 'zh-CN', 'el'
 ]
 
 module.exports = {
   maxTextReplyLength: maxTextReplyLength,
+  lostInTranslation: lostInTranslation,
   responseType: responseType,
-  baseHelpOptions: baseHelpOptions,
-  helpQuickReply: helpQuickReply,
   languageExamples: languageExamples
 }

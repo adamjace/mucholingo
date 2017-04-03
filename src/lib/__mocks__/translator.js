@@ -2,14 +2,10 @@
 
 const Promise = require('bluebird')
 
-class Translator {
-
-  static translate() {
-
-    return new Promise((resolve) => {
-      resolve(true)
-    })
-  }
+const translate = () => {
+  return new Promise((resolve) => {
+    resolve(true)
+  })
 }
 
-module.exports = Translator
+module.exports = translate
