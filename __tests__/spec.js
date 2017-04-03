@@ -345,13 +345,6 @@ describe('Bot tests', function() {
       expect(privates.getLanguageName('es', t)).toEqual('Spanish')
       expect(privates.getLanguageName('el', t)).toEqual('Greek')
       expect(privates.getLanguageName('zh-CN', t)).toEqual('Chinese')
-
-      const profile = { first_name: 'Jon', last_name: 'Doe', locale: 'es_AU'}
-      const _t = new Localise(privates.getLocale(profile))
-      expect(privates.getLanguageName('zh-CN', _t)).toEqual('Chino')
-      expect(privates.getLanguageName('en', _t)).toEqual('Inglés')
-      expect(privates.getLanguageName('es', _t)).toEqual('Español')
-      expect(privates.getLanguageName('hu', _t)).toEqual('Húngaro')
     })
 
     it('should get language name from locale', function() {
@@ -366,11 +359,12 @@ describe('Bot tests', function() {
     })
 
     it('should test that smart example is never undefined', function() {
+      expect(privates.getContextSuggestion({locale: 'en_AU'}, t)[0]).toEqual('English')
       expect(privates.getContextSuggestion({locale: 'en_AU'}, t)).not.toContain('undefined')
       expect(privates.getContextSuggestion({locale: 'en+test'}, t)).not.toContain('undefined')
       expect(privates.getContextSuggestion({locale: ''}, t)).not.toContain('undefined')
       expect(privates.getContextSuggestion({}, t)).not.toContain('undefined')
-      expect(privates.getContextSuggestion(), t).not.toContain('undefined')
+      expect(privates.getContextSuggestion(undefined, t)).not.toContain('undefined')
     })
 
     it('should get all language names', function() {
@@ -446,11 +440,12 @@ describe('Bot tests', function() {
     })
 
     it('(in Spanish) should test that smart example is never undefined', function() {
-      expect(privates.getContextSuggestion({locale: 'en_AU'}, t)).not.toContain('undefined')
-      expect(privates.getContextSuggestion({locale: 'en+test'}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: 'es_UK'}, t)[0]).toEqual('Español')
+      expect(privates.getContextSuggestion({locale: 'es_UK'}, t)).not.toContain('undefined')
+      expect(privates.getContextSuggestion({locale: 'es+test'}, t)).not.toContain('undefined')
       expect(privates.getContextSuggestion({locale: ''}, t)).not.toContain('undefined')
       expect(privates.getContextSuggestion({}, t)).not.toContain('undefined')
-      expect(privates.getContextSuggestion(), t).not.toContain('undefined')
+      expect(privates.getContextSuggestion(undefined, t)).not.toContain('undefined')
     })
 
     it('(in Spanish) should get all language names', function() {

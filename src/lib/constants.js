@@ -12,8 +12,8 @@ const responseType = {
 }
 
 const languageExamples = [
-  'English', 'German', 'Italian', 'Korean', 'Dutch', 'Japanese', 'Hindi',
-  'Spanish', 'French', 'Indonesian', 'Russian', 'Chinese', 'Greek'
+  'en', 'de', 'it', 'ko', 'nl', 'jp', 'hi',
+  'es', 'fr', 'id', 'ru', 'zh-CN', 'el'
 ]
 
 module.exports = {

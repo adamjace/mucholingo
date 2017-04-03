@@ -393,12 +393,16 @@ function getRandom(responses) {
 
 // getContextSuggestion
 function getContextSuggestion(profile, t) {
-  const locale = getLanguageNameLocale(profile, t)
+  const locale = getLocale(profile)
+  const localeLanguageName = getLanguageName(locale, t)
   let shuffled = shuffleArray(_.clone(_const.languageExamples))
-  if (!locale) return shuffled.splice(0, 2)
+  if (!locale) {
+    const splice = shuffled.splice(0, 2)
+    return [getLanguageName(splice[0], t), getLanguageName(splice[1], t)]
+  }
 
-  shuffled = _.remove(shuffled, (n) => { return n !== locale })
-  return [locale, shuffled[0]]
+  shuffled = _.remove(shuffled, (n) => { return n !== localeLanguageName })
+  return [localeLanguageName, getLanguageName(shuffled[0], t)]
 }
 
 // shuffleArray

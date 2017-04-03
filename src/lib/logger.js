@@ -1,8 +1,11 @@
 'use strict'
 
 class Logger {
-  static log(type, message) {
-    console.log(`${type}: ${message}`)
+  static log(...args) {
+    if (!args[1]) {
+      return console.log(`${args[0]}`)
+    }
+    return console.log(`${args[0]}: ${args[1]}`)
   }
 }
 
