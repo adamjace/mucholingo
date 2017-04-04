@@ -12,19 +12,24 @@ class Localise {
       code = defaultIfNotSupported
     }
 
-    this.code = require(util.format('./%s.js', code))
-    this._languages = require(util.format('./lang/%s.js', code))
+    this.code = code
+    this.map = require(util.format('./%s.js', this.code))
+    this.langs = require(util.format('./lang/%s.js', this.code))
   }
 
   get languages() {
-    return this._languages
+    return this.langs
+  }
+
+  get locale() {
+    return this.code
   }
 
   say(key, ...args) {
-    if (!this.code[key]) {
+    if (!this.map[key]) {
       return _const.lostInTranslation
     }
-    return util.format(this.code[key], ...args)
+    return util.format(this.map[key], ...args)
   }
 }
 

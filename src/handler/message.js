@@ -48,7 +48,7 @@ class MessageHandler {
 
         // create new localised translator
         // this is used for conversations between the bot and the user
-        const t = new Localise(getLocale(profile))
+        const t = new Localise('es')
 
         // retrieve the users context (their translation mode) from state if it
         // exists, otherwise perform a fetch from redis
@@ -292,6 +292,7 @@ class MessageHandler {
       getLocale: getLocale,
       getLanguageNameLocale: getLanguageNameLocale,
       getContextSuggestion: getContextSuggestion,
+      getRandom: getRandom,
       isPossibleChangeCommand: isPossibleChangeCommand
     }
   }
@@ -371,7 +372,7 @@ function getAllLanguageNames(t) {
   t.languages.forEach(function(lang) {
     list.push(_.capitalize(lang.name))
   })
-  return list
+  return _.sortBy(list)
 }
 
 // getLocale

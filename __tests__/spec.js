@@ -7,6 +7,7 @@ const db = require('../src/db/redis')
 const state = require('../src/lib/state')
 const _const = require('../src/lib/constants')
 const _MessageHandler = require('../src/handler/message')
+const _ProfileHandler = require('../src/handler/profile')
 const Localise = require('../src/locale/localise')
 
 let lastReply = '';
@@ -30,6 +31,7 @@ const bot = {
 }
 
 const MessageHandler = new _MessageHandler(bot)
+const ProfileHandler = new _ProfileHandler(bot)
 const privates = MessageHandler._privates()
 const t = new Localise(privates.getLocale(profile))
 
@@ -67,6 +69,14 @@ describe('Bot tests', function() {
       expect(state.size()).toEqual(1001)
       state.flushIfSizeLimitExceeded()
       expect(state.size()).toEqual(0)
+    })
+
+    it('should get userProfile data from state', function() {
+      const id = 123;
+      state.set(id, { id, first_name: 'Harry', last_name: 'Highpants', locale: 'en_AU' })
+      ProfileHandler.getProfile({ id }, (err, profile) => {
+        expect(profile.id).toEqual(123)
+      })
     })
   })
 
@@ -378,6 +388,15 @@ describe('Bot tests', function() {
       expect(privates.isPossibleChangeCommand('english romanian spanish', t)).toEqual(false)
       expect(privates.isPossibleChangeCommand('english to', t)).toEqual(false)
       expect(privates.isPossibleChangeCommand('blah_to_blah', t)).toEqual(false)
+    })
+
+    it('should test getRandom returns a single response', function() {
+      expect([privates.getRandom([1,2,3,4,5,6,7,8,9,0])].length).toEqual(1)
+    })
+
+    it('should default to EN if locale is not supported', function() {
+      const t = new Localise('it')
+      expect(t.locale).toEqual('en')
     })
   })
 
