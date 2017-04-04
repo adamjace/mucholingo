@@ -48,7 +48,7 @@ class MessageHandler {
 
         // create new localised translator
         // this is used for conversations between the bot and the user
-        const t = new Localise('es')
+        const t = new Localise(getLocale(profile))
 
         // retrieve the users context (their translation mode) from state if it
         // exists, otherwise perform a fetch from redis
