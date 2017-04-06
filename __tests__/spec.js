@@ -1,7 +1,6 @@
 'use strict'
 
 const _ = require('lodash')
-const languages = require('../src/lib/lang')
 const repo = require('../src/db/repo')
 const db = require('../src/db/redis')
 const state = require('../src/lib/state')
@@ -314,6 +313,18 @@ describe('Bot tests', function() {
       expect(context.hasNone).toEqual(true)
     })
 
+    it('should get context from message with strict matching and mixed languges', function() {
+      let context = privates.getContextFromMessage('english to español', true, t)
+      expect(context.code).toEqual('en:es')
+      expect(context.from).toEqual('English')
+      expect(context.to).toEqual('Spanish')
+
+      context = privates.getContextFromMessage('inglés to zulu', true, t)
+      expect(context.code).toEqual('en:zu')
+      expect(context.from).toEqual('English')
+      expect(context.to).toEqual('Zulu')
+    })
+
     it('should part get context from message', function() {
       let context = privates.getContextFromMessage('french to blahh', false, t)
       expect(context.code).toEqual(undefined)
@@ -422,6 +433,18 @@ describe('Bot tests', function() {
       expect(context.hasTwo).toEqual(true)
       expect(context.hasOne).toEqual(false)
       expect(context.hasNone).toEqual(false)
+    })
+
+    it('(in Spanish) should get context from message with strict matching and mixed languges', function() {
+      let context = privates.getContextFromMessage('english to español', true, t)
+      expect(context.code).toEqual('en:es')
+      expect(context.from).toEqual('Inglés')
+      expect(context.to).toEqual('Español')
+
+      context = privates.getContextFromMessage('spanish to english', true, t)
+      expect(context.code).toEqual('es:en')
+      expect(context.from).toEqual('Español')
+      expect(context.to).toEqual('Inglés')
     })
 
     it('(in Spanish) should get context from code', function() {
