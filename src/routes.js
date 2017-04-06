@@ -12,9 +12,9 @@ class Routes {
     }
 
     const post = (req, res)  => {
-      Logger.log(JSON.stringify(req.body))
+      Logger.log('info', JSON.stringify(req.body))
       bot._handleMessage(req.body)
-      res.end(JSON.stringify({status: 'ok'}))
+      res.send('ok')
     }
 
     app.get('/', get)

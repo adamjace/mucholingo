@@ -5,7 +5,7 @@ const Logger = require('../lib/logger')
 class ErrorHandler {
 
   static handleError(err) {
-    Logger.log(err.message)
+    Logger.log('error', err.message)
   }
 
 }

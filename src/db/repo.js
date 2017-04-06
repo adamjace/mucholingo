@@ -17,7 +17,7 @@ const repo = (senderId) => {
       }
       db.getAsync(senderId).then((context, err) => {
         if (err) return reject(err)
-        Logger.log(`redis: fetching data for: ${senderId}`)
+        Logger.log('info', `fetching data for user "${senderId}"`)
         setState(profile, context)
         const source = 'redis'
         return resolve({context, source})
@@ -29,7 +29,7 @@ const repo = (senderId) => {
     return new Promise((resolve) => {
       setState(profile, context)
       db.setAsync(senderId, context).then(() => {
-        Logger.log(`redis: saving data for: ${senderId}`)
+        Logger.log('info', `saving data for user "${senderId}"`)
         return resolve(context)
       })
     })
