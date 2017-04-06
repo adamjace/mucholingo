@@ -331,9 +331,12 @@ function getContextMatches(message, strict, t) {
   const words = message.split(' ')
   if (!strict || (strict && words.length === 3)) {
     words.forEach((word) => {
-      t.languages.filter(item => _.lowerCase(item.name) === _.lowerCase(word)).map((lang) => {
+      t.allLanguagesInAllLocales.filter(
+        item => _.lowerCase(item.name) === _.lowerCase(word)
+      ).map((lang) => {
         if (matches.length === 2) return
-        matches.push(lang)
+        // ensure the language name is displayed back to the user in their locale
+        matches.push({ name: getLanguageName(lang.code, t), code: lang.code })
       })
     })
   }
