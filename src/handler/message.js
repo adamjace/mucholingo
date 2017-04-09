@@ -1,9 +1,10 @@
 'use strict'
 
-const Promise = require('bluebird')
 const ProfileHandler = require('./profile')
 const Logger = require('../lib/logger')
 const Localise = require('../locale/localise')
+const Timer = require('../lib/Timer')
+const async = require('../lib/async')
 const translate = require('../lib/translator')
 const mp = require('../lib/mixpanel')
 const state = require('../lib/state')
@@ -23,6 +24,9 @@ class MessageHandler {
   // postbacks, quick replies, help commands and translations
   handleMessage(payload, reply) {
 
+    const timer = new Timer()
+    timer.start()
+
     const { sender, message, postback } = payload
 
     // clear state if we need to
@@ -32,7 +36,7 @@ class MessageHandler {
     if (sender.id === config.fb_page_id)
       return false
 
-    return new Promise((resolve, reject) => {
+    return async((resolve, reject) => {
 
       // getProfile retrieves user data from state first if it exists, otherwise
       // performs an aysnc call to Facebook to get the users information
@@ -66,7 +70,7 @@ class MessageHandler {
             return resolve(this.handlePostBack(response.context, message.quick_reply, profile, sender, reply, t))
           }
           else if (!message.text) {
-            return resolve(false)
+            return resolve()
           }
           else if (_.includes(message.text.toLowerCase(), t.say('help')) && !response.context) {
             return resolve(this.handleHelp(response.context, profile, sender, reply, t))
@@ -89,103 +93,125 @@ class MessageHandler {
           return resolve(this.handleTranslation(response.context, sender, message, reply, t))
         })
       })
+    }).finally(() => {
+      timer.stop()
+      Logger.log('info', timer.report)
     })
   }
 
   // handlePostBack
   handlePostBack(context, postback, profile, sender, reply, t) {
     Logger.log('info', 'handlePostBack')
-    if (postback.payload === _const.responseType.getStarted) {
-      return this.handleGetStarted(sender, profile, reply, t)
-    }
-    else if (postback.payload === _const.responseType.help) {
-      return this.handleHelp(context, profile, sender, reply, t)
-    }
-    else if (postback.payload === _const.responseType.reset) {
-      return this.handleReset(sender, reply, t)
-    }
-    else if (postback.payload === _const.responseType.switch) {
-      return this.handleSwitch(context, sender, reply, t)
-    }
-    else if (postback.payload === _const.responseType.list) {
-      return this.handleShowAllLanguages(sender, reply, t)
-    }
+    return async((resolve) => {
+      if (postback.payload === _const.responseType.getStarted) {
+        return resolve(this.handleGetStarted(sender, profile, reply, t))
+      }
+      else if (postback.payload === _const.responseType.help) {
+        return resolve(this.handleHelp(context, profile, sender, reply, t))
+      }
+      else if (postback.payload === _const.responseType.reset) {
+        return resolve(this.handleReset(sender, reply, t))
+      }
+      else if (postback.payload === _const.responseType.switch) {
+        return resolve(this.handleSwitch(context, sender, reply, t))
+      }
+      else if (postback.payload === _const.responseType.list) {
+        return resolve(this.handleShowAllLanguages(sender, reply, t))
+      }
+    })
   }
 
   // handleGetStarted
   handleGetStarted(sender, profile, reply, t) {
     Logger.log('info', 'handleGetStarted')
-    const suggestion = getContextSuggestion(profile, t)
-    return reply({
-      text: t.say('getting_started', profile && profile.first_name, suggestion[0], suggestion[1]),
-    }, () => {
-      mp.setPerson(sender, profile)
-      mp.track('I click to get started', sender)
+    return async((resolve, reject) => {
+      const suggestion = getContextSuggestion(profile, t)
+      return reply({
+        text: t.say('getting_started', profile && profile.first_name, suggestion[0], suggestion[1]),
+      }, (err) => {
+        if (err) return reject(err)
+
+        mp.setPerson(sender, profile)
+        mp.track('I click to get started', sender)
+        return resolve()
+      })
     })
   }
 
   // handleHelp
   handleHelp(context, profile, sender, reply, t) {
     Logger.log('info', 'handleHelp')
-    const suggestion = getContextSuggestion(profile, t)
-    let text = t.say('ask_for_help', suggestion[0], suggestion[1])
-    let options = [{
-      'type': 'postback',
-      'title': t.say('show_all_languages'),
-      'payload': _const.responseType.list
-    }]
+    return async((resolve, reject) => {
+      const suggestion = getContextSuggestion(profile, t)
+      let text = t.say('ask_for_help', suggestion[0], suggestion[1])
+      let options = [{
+        'type': 'postback',
+        'title': t.say('show_all_languages'),
+        'payload': _const.responseType.list
+      }]
 
-    if (context) {
-      context = getContextFromCode(context, t)
-      text = t.say('ask_for_help_with_context', context.from, context.to)
-      options.unshift(
-        {
-          'type': 'postback',
-          'title': t.say('reset'),
-          'payload': _const.responseType.reset
-        },
-        {
-          'type': 'postback',
-          'title': t.say('lang_to_lang', context.to, context.from),
-          'payload': _const.responseType.switch
-        }
-      )
-    }
-
-    return reply({
-      'attachment': {
-        'type': 'template',
-        'payload': {
-          'template_type': 'button',
-          'text': text,
-          'buttons': options
-        }
+      if (context) {
+        context = getContextFromCode(context, t)
+        text = t.say('ask_for_help_with_context', context.from, context.to)
+        options.unshift(
+          {
+            'type': 'postback',
+            'title': t.say('reset'),
+            'payload': _const.responseType.reset
+          },
+          {
+            'type': 'postback',
+            'title': t.say('lang_to_lang', context.to, context.from),
+            'payload': _const.responseType.switch
+          }
+        )
       }
-    }, () => {
-      mp.track('I ask for help', sender)
+
+      reply({
+        'attachment': {
+          'type': 'template',
+          'payload': {
+            'template_type': 'button',
+            'text': text,
+            'buttons': options
+          }
+        }
+      }, (err) => {
+        if (err) return reject(err)
+        mp.track('I ask for help', sender)
+        return resolve()
+      })
     })
   }
 
   // handleShowAllLanguages
   // due to Facebook's payload size limit we need to chunk the list into seprate bits
   handleShowAllLanguages(sender, reply, t) {
-    const list = getAllLanguageNames(t)
-    const first = list.splice(0, list.length / 3)
-    const second = list.splice(0, list.length / 2)
-    reply({text: `${t.say('ok_here_goes')}\n\n${first.toString().replace(/,/g, ', ')}`}, () => {
-      reply({text: `${second.toString().replace(/,/g, ', ')}`}, () => {
-        reply({text: `${list.toString().replace(/,/g, ', ')}\n\n ${t.say('gasp')}`})
+    return async((resolve, reject) => {
+      const list = getAllLanguageNames(t)
+      const first = list.splice(0, list.length / 3)
+      const second = list.splice(0, list.length / 2)
+      reply({text: `${t.say('ok_here_goes')}\n\n${first.toString().replace(/,/g, ', ')}`}, (err) => {
+        if (err) return reject(err)
+        reply({text: `${second.toString().replace(/,/g, ', ')}`}, (err) => {
+          if (err) return reject(err)
+          reply({text: `${list.toString().replace(/,/g, ', ')}\n\n ${t.say('gasp')}`}, (err) => {
+            if (err) return reject(err)
+            resolve()
+          })
+        })
       })
     })
   }
 
   // handleReset
   handleReset(sender, reply, t) {
-    repo(sender.id).set('').then((err) => {
+    return repo(sender.id).set('').then((err) => {
       if (err) Logger.log('error', err)
       return reply({
         text: t.say('translate_next')
-      }, () => {
+      }, (err) => {
+        if (err) Logger.log('error', err)
         mp.track('I reset context', sender)
       })
     })
@@ -200,20 +226,24 @@ class MessageHandler {
   // handleNoContext
   handleNoContext(sender, profile, message, reply, t) {
     Logger.log('info', 'handleNoContext')
-    const context = getContextFromMessage(message.text, false, t)
-    if (context.hasTwo && context.from !== context.to) {
-      return this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t)
-    }
-    if (this.handleGeneralResponse(sender, profile, message, reply, t) !== false) {
-      return
-    }
+    return async((resolve, reject) => {
+      const context = getContextFromMessage(message.text, false, t)
+      if (context.hasTwo && context.from !== context.to) {
+        return resolve(this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t))
+      }
+      if (this.handleGeneralResponse(sender, profile, message, reply, t) !== false) {
+        return resolve()
+      }
 
-    let text = t.say('unreconised')
-    if (context.hasOne) text = t.say('part_unrecognised', context.from)
-    return reply({
-      text: text
-    }, () => {
-      mp.track('I incorrectly set context', sender, message)
+      let text = t.say('unreconised')
+      if (context.hasOne) text = t.say('part_unrecognised', context.from)
+      return reply({
+        text: text
+      }, (err) => {
+        if (err) return reject(err)
+        mp.track('I incorrectly set context', sender, message)
+        return resolve()
+      })
     })
   }
 
@@ -242,11 +272,12 @@ class MessageHandler {
   // handleSetContext
   handleSetContext(code, from, to, sender, message, reply, t) {
     Logger.log('info', 'handleSetContext')
-    repo(sender.id).set(code).then((err) => {
+    return repo(sender.id).set(code).then((err) => {
       if (err) Logger.log('error', err)
       return reply({
         text: t.say('set_context', from, to)
-      }, () => {
+      }, (err) => {
+        if (err) throw err
         mp.track('I set context', sender, message)
       })
     })
@@ -255,7 +286,7 @@ class MessageHandler {
   // handleTranslation
   handleTranslation(context, sender, message, reply, t) {
     let response = {}
-    translate(message.text, context).
+    return translate(message.text, context).
       then((result) => {
         if (result.length > _const.maxTextReplyLength) {
           return reply({text: t.say('too_long')})
