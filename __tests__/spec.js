@@ -12,8 +12,9 @@ const Localise = require('../src/locale/localise')
 let lastReply = '';
 const userId = 'testUserId'
 
-const reply = ({text}) => {
+const reply = ({text}, cb) => {
   lastReply = text
+  if (cb) cb()
 }
 
 const profile = {
