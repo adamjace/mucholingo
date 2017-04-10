@@ -93,7 +93,8 @@ class MessageHandler {
           return resolve(this.handleTranslation(response.context, sender, message, reply, t))
         })
       })
-    }).finally(() => {
+    })
+    .finally(() => {
       timer.stop()
       Logger.log('info', timer.report)
     })
@@ -129,8 +130,7 @@ class MessageHandler {
       return reply({
         text: t.say('getting_started', profile && profile.first_name, suggestion[0], suggestion[1]),
       }, (err) => {
-        if (err) return reject(err)
-
+        if (err) {return reject(err)
         mp.setPerson(sender, profile)
         mp.track('I click to get started', sender)
         return resolve()
