@@ -130,7 +130,7 @@ class MessageHandler {
       return reply({
         text: t.say('getting_started', profile && profile.first_name, suggestion[0], suggestion[1]),
       }, (err) => {
-        if (err) {return reject(err)
+        if (err) return reject(err)
         mp.setPerson(sender, profile)
         mp.track('I click to get started', sender)
         return resolve()
