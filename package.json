@@ -9,7 +9,7 @@
     "restart": "sudo forever restart -v --minUptime=5000 src/app.js",
     "dev": "sudo node src/app.js",
     "lint": "eslint ./src --ext .js",
-    "test": "jest --no-cache || true"
+    "test": "jest --no-cache"
   },
   "author": "Adam Goldin",
   "license": "MIT",
