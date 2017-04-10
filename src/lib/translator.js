@@ -2,13 +2,13 @@
 
 const config = require('../config')
 const googleTranslate = require('google-translate')(config.google_key)
-const Promise = require('bluebird')
+const async = require('../lib/async')
 
 const translate = (message, context) => {
   const arr = context.split(':')
   const source = arr[0]
   const target = arr[1]
-  return new Promise((resolve, reject) => {
+  return async((resolve, reject) => {
     if (!googleTranslate || !googleTranslate.translate) reject(null)
     googleTranslate.translate(message, source, target, (err, translation) => {
       if (err) return reject(err)

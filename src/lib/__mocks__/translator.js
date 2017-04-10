@@ -1,9 +1,9 @@
 'use strict'
 
-const Promise = require('bluebird')
+const async = require('../async')
 
 const translate = () => {
-  return new Promise((resolve) => {
+  return async((resolve) => {
     resolve(true)
   })
 }
