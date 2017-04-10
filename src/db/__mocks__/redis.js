@@ -1,4 +1,4 @@
-const Promise = require('bluebird')
+const async = require('../../lib/async')
 
 let context = ''
 
@@ -8,14 +8,14 @@ const db = {
 }
 
 function getAsync() {
-  return new Promise((resolve) => {
+  return async((resolve) => {
     resolve(context)
   })
 }
 
 function setAsync(senderId, context) {
   db.__setContext(context)
-  return new Promise((resolve) => {
+  return async((resolve) => {
     resolve(context)
   })
 }
