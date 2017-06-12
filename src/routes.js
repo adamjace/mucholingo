@@ -14,6 +14,8 @@ class Routes {
     const post = (req, res)  => {
       Logger.log('info', JSON.stringify(req.body))
       bot._handleMessage(req.body)
+      
+      // Facebook requires an immediate 200 OK response 
       res.send('ok')
     }
 
