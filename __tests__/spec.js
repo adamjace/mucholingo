@@ -25,7 +25,7 @@ const profile = {
 
 const bot = {
   setTyping: () => {},
-  getProfile: function(id, cb) {
+  getProfile: (id, cb) => {
     cb(null, profile)
   }
 }
@@ -35,7 +35,7 @@ const ProfileHandler = new _ProfileHandler(bot)
 const privates = MessageHandler._privates()
 const t = new Localise(privates.getLocale(profile))
 
-describe('Bot tests', function() {
+describe('Bot tests', () => {
 
   beforeEach(() => {
     db.__setContext(undefined)
@@ -43,14 +43,14 @@ describe('Bot tests', function() {
     delete profile.context
   })
 
-  describe('State test', function() {
-    it('should set state correctly', function() {
+  describe('State test', () => {
+    it('should set state correctly', () => {
       expect(state.get(userId)).toEqual(undefined)
       state.set(userId, 'test')
       expect(state.get(userId)).toEqual('test')
     })
 
-    it('should set and clear state correctly', function() {
+    it('should set and clear state correctly', () => {
       state.set('user1', 'apples')
       state.set('user2', 'pears')
       state.set('user3', 'strawberries')
@@ -71,7 +71,7 @@ describe('Bot tests', function() {
       expect(state.size()).toEqual(0)
     })
 
-    it('should get userProfile data from state', function() {
+    it('should get userProfile data from state', () => {
       const id = 123;
       state.set(id, { id, first_name: 'Harry', last_name: 'Highpants', locale: 'en_AU' })
       ProfileHandler.getProfile({ id }, (err, profile) => {
@@ -80,8 +80,8 @@ describe('Bot tests', function() {
     })
   })
 
-  describe('DB client test', function() {
-    it('should set and get context from the db', function(done) {
+  describe('DB client test', () => {
+    it('should set and get context from the db', (done) => {
       const testValue = 'test_value'
       repo(userId).set(testValue).then(() => {
         repo(userId).get().then((response) => {
@@ -92,10 +92,10 @@ describe('Bot tests', function() {
     })
   })
 
-  describe('DB/State integration test', function() {
+  describe('DB/State integration test', () => {
     let profile = {}
     beforeEach(() => { profile = {} })
-    it('should retrieve data from state', function(done) {
+    it('should retrieve data from state', (done) => {
       profile.context = 'test_value'
       state.set(userId, profile)
       repo(userId).get().then((response) => {
@@ -105,7 +105,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should retrieve data from the DB', function(done) {
+    it('should retrieve data from the DB', (done) => {
       db.__setContext('test_value')
       repo(userId).get().then((response) => {
         expect(response.context).toEqual('test_value')
@@ -115,7 +115,7 @@ describe('Bot tests', function() {
     })
   })
 
-  describe('Message handlers', function() {
+  describe('Message handlers', () => {
     let payload;
     beforeEach(() => {
       payload = {
@@ -125,7 +125,7 @@ describe('Bot tests', function() {
       }
     })
 
-    it('should call handleHelp if no context is set', function(done) {
+    it('should call handleHelp if no context is set', (done) => {
       db.__setContext(undefined)
       payload.message.text = 'help'
       spyOn(MessageHandler, 'handleHelp')
@@ -136,7 +136,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should NOT call handleHelp if context is set', function(done) {
+    it('should NOT call handleHelp if context is set', (done) => {
       db.__setContext(true)
       payload.message.text = 'help'
       payload.sender.id = userId
@@ -147,7 +147,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should call handleTranslation if context is set', function(done) {
+    it('should call handleTranslation if context is set', (done) => {
       db.__setContext(true)
       payload.message.text = 'test message'
       payload.sender.id = userId
@@ -161,7 +161,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should NOT call handleTranslation if no context is set', function(done) {
+    it('should NOT call handleTranslation if no context is set', (done) => {
       db.__setContext(undefined)
       payload.sender.id = userId
       payload.message.text = 'test message'
@@ -174,7 +174,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should call handleSetContext', function(done) {
+    it('should call handleSetContext', (done) => {
       payload.message.text = 'english to spanish'
       spyOn(MessageHandler, 'handleSetContext')
       MessageHandler.handleMessage(payload, reply).then(() => {
@@ -184,7 +184,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should NOT call handleSetContext', function(done) {
+    it('should NOT call handleSetContext', (done) => {
       payload.message.text = 'english to blah'
       spyOn(MessageHandler, 'handleSetContext')
       MessageHandler.handleMessage(payload, reply).then(() => {
@@ -193,7 +193,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should call handleSetContext from a change command', function(done) {
+    it('should call handleSetContext from a change command', (done) => {
       payload.message.text = 'french to dutch'
       payload.sender.id = userId
       spyOn(MessageHandler, 'handleSetContext')
@@ -207,7 +207,7 @@ describe('Bot tests', function() {
     })
   })
 
-  describe('Postback handlers', function() {
+  describe('Postback handlers', () => {
     let payload;
     beforeEach(() => {
       payload = {
@@ -219,7 +219,7 @@ describe('Bot tests', function() {
       }
     })
 
-    it('should call handleGetStarted postback', function(done) {
+    it('should call handleGetStarted postback', (done) => {
       payload.postback.payload = '#getstarted'
       const reply = {}
       spyOn(MessageHandler, 'handleGetStarted')
@@ -230,7 +230,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should call handleHelp postback', function(done) {
+    it('should call handleHelp postback', (done) => {
       payload.postback.payload = '#help'
       spyOn(MessageHandler, 'handleHelp')
       MessageHandler.handleMessage(payload, reply).then(() => {
@@ -240,7 +240,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should call handleReset postback', function(done) {
+    it('should call handleReset postback', (done) => {
       payload.postback.payload = '#reset'
       spyOn(MessageHandler, 'handleReset')
       MessageHandler.handleMessage(payload, reply).then(() => {
@@ -250,7 +250,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should call handleSwitch postback', function(done) {
+    it('should call handleSwitch postback', (done) => {
       payload.postback.payload = '#switch'
       spyOn(MessageHandler, 'handleSwitch')
       MessageHandler.handleMessage(payload, reply).then(() => {
@@ -260,7 +260,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should call handleShowAllLanguages postback', function(done) {
+    it('should call handleShowAllLanguages postback', (done) => {
       payload.postback.payload = '#list'
       spyOn(MessageHandler, 'handleShowAllLanguages')
       MessageHandler.handleMessage(payload, reply).then(() => {
@@ -270,7 +270,7 @@ describe('Bot tests', function() {
       })
     })
 
-    it('should call handleHelp quick reply postback', function(done) {
+    it('should call handleHelp quick reply postback', (done) => {
       payload.postback = null
       payload.message = {quick_reply:{payload: '#help'}}
       spyOn(MessageHandler, 'handleHelp')
@@ -282,9 +282,9 @@ describe('Bot tests', function() {
     })
   })
 
-  describe('test private methods', function() {
+  describe('test private methods', () => {
 
-    it('should get context from message without strict matching', function() {
+    it('should get context from message without strict matching', () => {
       let context = privates.getContextFromMessage('translate from english to spanish please', false, t)
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('English')
@@ -294,7 +294,7 @@ describe('Bot tests', function() {
       expect(context.hasNone).toEqual(false)
     })
 
-    it('should get context from message with strict matching', function() {
+    it('should get context from message with strict matching', () => {
       let context = privates.getContextFromMessage('english to spanish', true, t)
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('English')
@@ -304,7 +304,7 @@ describe('Bot tests', function() {
       expect(context.hasNone).toEqual(false)
     })
 
-    it('should NOT get context from message with strict matching', function() {
+    it('should NOT get context from message with strict matching', () => {
       let context = privates.getContextFromMessage('translate from english to spanish please', true, t)
       expect(context.code).toEqual(undefined)
       expect(context.from).toEqual(undefined)
@@ -314,7 +314,7 @@ describe('Bot tests', function() {
       expect(context.hasNone).toEqual(true)
     })
 
-    it('should get context from message with strict matching and mixed languges', function() {
+    it('should get context from message with strict matching and mixed languges', () => {
       let context = privates.getContextFromMessage('english to español', true, t)
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('English')
@@ -326,7 +326,7 @@ describe('Bot tests', function() {
       expect(context.to).toEqual('Zulu')
     })
 
-    it('should part get context from message', function() {
+    it('should part get context from message', () => {
       let context = privates.getContextFromMessage('french to blahh', false, t)
       expect(context.code).toEqual(undefined)
       expect(context.from).toEqual('French')
@@ -336,7 +336,7 @@ describe('Bot tests', function() {
       expect(context.hasNone).toEqual(false)
     })
 
-    it('should NOT get context from message', function() {
+    it('should NOT get context from message', () => {
       let context = privates.getContextFromMessage('ping to pong', false, t)
       expect(context.code).toEqual(undefined)
       expect(context.from).toEqual(undefined)
@@ -346,7 +346,7 @@ describe('Bot tests', function() {
       expect(context.hasNone).toEqual(true)
     })
 
-    it('should get context from code', function() {
+    it('should get context from code', () => {
       let context = privates.getContextFromCode('fr:de', t)
       expect(context.code).toEqual('fr:de')
       expect(context.from).toEqual('French')
@@ -354,7 +354,7 @@ describe('Bot tests', function() {
       expect(context.hasTwo).toEqual(true)
     })
 
-    it('should switch context', function() {
+    it('should switch context', () => {
       const context = { code: 'en:ru', from: 'English', to: 'Russian' }
       const switched = privates.switchContext(context)
       expect(context.code).toEqual('ru:en')
@@ -362,14 +362,14 @@ describe('Bot tests', function() {
       expect(context.to).toEqual('English')
     })
 
-    it('should get language name', function() {
+    it('should get language name', () => {
       expect(privates.getLanguageName('en', t)).toEqual('English')
       expect(privates.getLanguageName('es', t)).toEqual('Spanish')
       expect(privates.getLanguageName('el', t)).toEqual('Greek')
       expect(privates.getLanguageName('zh-CN', t)).toEqual('Chinese')
     })
 
-    it('should get language name from locale', function() {
+    it('should get language name from locale', () => {
       expect(privates.getLanguageNameLocale({locale: 'en_AU'}, t)).toEqual('English')
       expect(privates.getLanguageNameLocale({locale: 'en_GB'}, t)).toEqual('English')
       expect(privates.getLanguageNameLocale({locale: 'es_ES'}, t)).toEqual('Spanish')
@@ -380,7 +380,7 @@ describe('Bot tests', function() {
       expect(privates.getLanguageNameLocale(null, t)).toEqual(undefined)
     })
 
-    it('should test that smart example is never undefined', function() {
+    it('should test that smart example is never undefined', () => {
       expect(privates.getContextSuggestion({locale: 'en_AU'}, t)[0]).toEqual('English')
       expect(privates.getContextSuggestion({locale: 'en_AU'}, t)).not.toContain('undefined')
       expect(privates.getContextSuggestion({locale: 'en+test'}, t)).not.toContain('undefined')
@@ -389,11 +389,11 @@ describe('Bot tests', function() {
       expect(privates.getContextSuggestion(undefined, t)).not.toContain('undefined')
     })
 
-    it('should get all language names', function() {
+    it('should get all language names', () => {
       expect(privates.getAllLanguageNames(t).length).toEqual(91)
     })
 
-    it('should detect possible change commands', function() {
+    it('should detect possible change commands', () => {
       expect(privates.isPossibleChangeCommand('english to spanish', t)).toEqual(true)
       expect(privates.isPossibleChangeCommand('a to b', t)).toEqual(true)
       expect(privates.isPossibleChangeCommand('english dutch', t)).toEqual(false)
@@ -402,21 +402,21 @@ describe('Bot tests', function() {
       expect(privates.isPossibleChangeCommand('blah_to_blah', t)).toEqual(false)
     })
 
-    it('should test getRandom returns a single response', function() {
+    it('should test getRandom returns a single response', () => {
       expect([privates.getRandom([1,2,3,4,5,6,7,8,9,0])].length).toEqual(1)
     })
 
-    it('should default to EN if locale is not supported', function() {
+    it('should default to EN if locale is not supported', () => {
       const t = new Localise('it')
       expect(t.locale).toEqual('en')
     })
   })
 
-  describe('Test private methods with Spanish locale', function() {
+  describe('Test private methods with Spanish locale', () => {
 
     const t = new Localise(privates.getLocale({locale: 'es_GB'}))
 
-    it('(in Spanish) should get context from message without strict matching', function() {
+    it('(in Spanish) should get context from message without strict matching', () => {
       let context = privates.getContextFromMessage('como se dice inglés a español por favor', false, t)
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('Inglés')
@@ -426,7 +426,7 @@ describe('Bot tests', function() {
       expect(context.hasNone).toEqual(false)
     })
 
-    it('(in Spanish) should get context from message with strict matching', function() {
+    it('(in Spanish) should get context from message with strict matching', () => {
       let context = privates.getContextFromMessage('inglés a español', true, t)
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('Inglés')
@@ -436,7 +436,7 @@ describe('Bot tests', function() {
       expect(context.hasNone).toEqual(false)
     })
 
-    it('(in Spanish) should get context from message with strict matching and mixed languges', function() {
+    it('(in Spanish) should get context from message with strict matching and mixed languges', () => {
       let context = privates.getContextFromMessage('english to español', true, t)
       expect(context.code).toEqual('en:es')
       expect(context.from).toEqual('Inglés')
@@ -448,7 +448,7 @@ describe('Bot tests', function() {
       expect(context.to).toEqual('Inglés')
     })
 
-    it('(in Spanish) should get context from code', function() {
+    it('(in Spanish) should get context from code', () => {
       let context = privates.getContextFromCode('fr:de', t)
       expect(context.code).toEqual('fr:de')
       expect(context.from).toEqual('Francés')
@@ -456,7 +456,7 @@ describe('Bot tests', function() {
       expect(context.hasTwo).toEqual(true)
     })
 
-    it('(in Spanish) should switch context', function() {
+    it('(in Spanish) should switch context', () => {
       const context = { code: 'en:ru', from: 'Inglés', to: 'Ruso' }
       const switched = privates.switchContext(context)
       expect(context.code).toEqual('ru:en')
@@ -464,14 +464,14 @@ describe('Bot tests', function() {
       expect(context.to).toEqual('Inglés')
     })
 
-    it('(in Spanish) should get language name', function() {
+    it('(in Spanish) should get language name', () => {
       expect(privates.getLanguageName('zh-CN', t)).toEqual('Chino')
       expect(privates.getLanguageName('en', t)).toEqual('Inglés')
       expect(privates.getLanguageName('es', t)).toEqual('Español')
       expect(privates.getLanguageName('hu', t)).toEqual('Húngaro')
     })
 
-    it('(in Spanish) should get language name from locale', function() {
+    it('(in Spanish) should get language name from locale', () => {
       expect(privates.getLanguageNameLocale({locale: 'en_AU'}, t)).toEqual('Inglés')
       expect(privates.getLanguageNameLocale({locale: 'en_GB'}, t)).toEqual('Inglés')
       expect(privates.getLanguageNameLocale({locale: 'es_ES'}, t)).toEqual('Español')
@@ -482,7 +482,7 @@ describe('Bot tests', function() {
       expect(privates.getLanguageNameLocale(null, t)).toEqual(undefined)
     })
 
-    it('(in Spanish) should test that smart example is never undefined', function() {
+    it('(in Spanish) should test that smart example is never undefined', () => {
       expect(privates.getContextSuggestion({locale: 'es_UK'}, t)[0]).toEqual('Español')
       expect(privates.getContextSuggestion({locale: 'es_UK'}, t)).not.toContain('undefined')
       expect(privates.getContextSuggestion({locale: 'es+test'}, t)).not.toContain('undefined')
@@ -491,11 +491,11 @@ describe('Bot tests', function() {
       expect(privates.getContextSuggestion(undefined, t)).not.toContain('undefined')
     })
 
-    it('(in Spanish) should get all language names', function() {
+    it('(in Spanish) should get all language names', () => {
       expect(privates.getAllLanguageNames(t).length).toEqual(91)
     })
 
-    it('(in Spanish) should detect possible change commands', function() {
+    it('(in Spanish) should detect possible change commands', () => {
       expect(privates.isPossibleChangeCommand('ingles a espanol', t)).toEqual(true)
       expect(privates.isPossibleChangeCommand('alemana a zulu', t)).toEqual(true)
       expect(privates.isPossibleChangeCommand('english dutch', t)).toEqual(false)

@@ -11,7 +11,7 @@ const repo = (senderId) => {
   // get the current profile from state
   const profile = state.get(senderId) || {}
 
-  function get() {
+  const get = () => {
     return async((resolve, reject) => {
       if (profile.context != null) {
         return resolve({ context: profile.context, source: 'state' })
@@ -26,7 +26,7 @@ const repo = (senderId) => {
     })
   }
 
-  function set(context) {
+  const set = (context) => {
     return async((resolve) => {
       setState(profile, context)
       db.setAsync(senderId, context).then(() => {
@@ -37,7 +37,7 @@ const repo = (senderId) => {
   }
 
   // setState assigns the user context to the state map
-  function setState(profile, context) {
+  const setState = (profile, context) => {
     profile.context = context
     state.set(profile.id, profile)
   }

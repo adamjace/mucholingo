@@ -331,7 +331,7 @@ class MessageHandler {
 
 // private methods
 // getContextFromMessage
-function getContextFromMessage(message, strict, t) {
+const getContextFromMessage = (message, strict, t) => {
   const ctxMatches = getContextMatches(message, strict, t)
   const { hasTwo, hasOne, hasNone } = ctxMatches
   let code, from, to
@@ -346,7 +346,7 @@ function getContextFromMessage(message, strict, t) {
 }
 
 // getContextFromCode
-function getContextFromCode(code, t) {
+const getContextFromCode = (code, t) => {
   const codes = code.split(':')
   return {
     code,
@@ -357,7 +357,7 @@ function getContextFromCode(code, t) {
 }
 
 // getContextMatches
-function getContextMatches(message, strict, t) {
+const getContextMatches = (message, strict, t) => {
   let matches = []
   const words = message.split(' ')
   if (!strict || (strict && words.length === 3)) {
@@ -380,7 +380,7 @@ function getContextMatches(message, strict, t) {
 }
 
 // switchContext
-function switchContext(context) {
+const switchContext = (context) => {
   const values = context.code.split(':')
   const from = context.to
   const to = context.from
@@ -393,7 +393,7 @@ function switchContext(context) {
 }
 
 // getLanguageName
-function getLanguageName(code, t) {
+const getLanguageName = (code, t) => {
   const name = t.languages.filter(item => item.code === code).map((lang) => {
     return lang.name
   })
@@ -401,33 +401,33 @@ function getLanguageName(code, t) {
 }
 
 // listAllLanguages
-function getAllLanguageNames(t) {
+const getAllLanguageNames = (t) => {
   let list = []
-  t.languages.forEach(function(lang) {
+  t.languages.forEach((lang) => {
     list.push(_.capitalize(lang.name))
   })
   return _.sortBy(list)
 }
 
 // getLocale
-function getLocale(profile) {
+const getLocale = (profile) => {
   if (!profile || (profile && !profile.locale || profile.locale.indexOf('_') === -1)) return
   return profile.locale.split('_')[0]
 }
 
 // getLanguageNameLocale
-function getLanguageNameLocale(profile, t) {
+const getLanguageNameLocale = (profile, t) => {
   const code = getLocale(profile)
   return code && getLanguageName(code, t)
 }
 
 // getRandom
-function getRandom(responses) {
+const getRandom = (responses) => {
   return responses[Math.floor(Math.random()*responses.length)]
 }
 
 // getContextSuggestion
-function getContextSuggestion(profile, t) {
+const getContextSuggestion = (profile, t) => {
   const locale = getLocale(profile)
   const localeLanguageName = getLanguageName(locale, t)
   let shuffled = shuffleArray(_.clone(_const.languageExamples))
@@ -441,7 +441,7 @@ function getContextSuggestion(profile, t) {
 }
 
 // shuffleArray
-function shuffleArray(array) {
+const shuffleArray = (array) => {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     const temp = array[i]
@@ -452,7 +452,7 @@ function shuffleArray(array) {
 }
 
 // isPossibleChangeCommand
-function isPossibleChangeCommand(message, t) {
+const isPossibleChangeCommand = (message, t) => {
   const words = message.split(' ')
   return words.length === 3 && words[1] === t.say('to')
 }
