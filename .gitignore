@@ -40,6 +40,7 @@ jspm_packages
 key.pem
 launch.sh
 redis.sh
+deploy.sh
 
 # config
 .env

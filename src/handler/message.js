@@ -119,6 +119,10 @@ class MessageHandler {
       else if (postback.payload === _const.responseType.list) {
         return resolve(this.handleShowAllLanguages(sender, reply, t))
       }
+      else if (postback.payload === _const.responseType.preset) {
+        const newContext = getContextFromCode('es:en', t)
+        return resolve(this.handleSetContext(newContext.code, newContext.from, newContext.to, sender, null, reply, t))
+      }
     })
   }
 
@@ -153,18 +157,23 @@ class MessageHandler {
       if (context) {
         context = getContextFromCode(context, t)
         text = t.say('ask_for_help_with_context', context.from, context.to)
-        options.unshift(
-          {
-            'type': 'postback',
-            'title': t.say('reset'),
-            'payload': _const.responseType.reset
-          },
-          {
-            'type': 'postback',
-            'title': t.say('lang_to_lang', context.to, context.from),
-            'payload': _const.responseType.switch
-          }
-        )
+        options.unshift({
+          'type': 'postback',
+          'title': t.say('reset'),
+          'payload': _const.responseType.reset
+        }, {
+          'type': 'postback',
+          'title': t.say('lang_to_lang', context.to, context.from),
+          'payload': _const.responseType.switch
+        })
+      } else if (getLocale(profile) === 'es') {
+        // Spanish to English is the most common context for ES users
+        // offer this as a preset if no context has been set
+        options.push({
+          'type': 'postback',
+          'title': t.say('lang_to_lang', 'Español', 'Inglés'),
+          'payload': _const.responseType.preset
+        })
       }
 
       reply({

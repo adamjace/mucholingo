@@ -280,6 +280,17 @@ describe('Bot tests', () => {
         done()
       })
     })
+
+    it('should call handleSetContext postback', (done) => {
+      payload.postback.payload = '#preset'
+      const reply = {}
+      spyOn(MessageHandler, 'handleSetContext')
+      MessageHandler.handleMessage(payload, reply).then(() => {
+        expect(MessageHandler.handleSetContext).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
+        done()
+      })
+    })
   })
 
   describe('test private methods', () => {

@@ -8,7 +8,8 @@ const responseType = {
   getStarted: '#getstarted',
   reset: '#reset',
   switch: '#switch',
-  list: '#list'
+  list: '#list',
+  preset: '#preset'
 }
 
 const languageExamples = [
