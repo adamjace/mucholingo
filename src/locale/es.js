@@ -5,7 +5,7 @@ module.exports = {
   'ask_for_help_with_context': 'Hola de nuevo. Veo que has pedido ayuda...\n\nActualmente estoy traduciendo todo lo que dices del %s al %s\n\n',
   'reset': 'Reiniciar',
   'lang_to_lang': '%s a %s',
-  'unreconised': 'Wow, no lo entendí. Pídeme ayuda en cualquier momento.',
+  'unreconised': 'Wow, no lo entendí.',
   'part_unrecognised': 'Sólo entendí %s allí. Inténtalo de nuevo, o pide "ayuda"',
   'set_context': '%s a %s. ¡Lo tengo! Ahora adelante y dime que decir',
   'too_long': 'Lo siento, no puedo traducir todo eso. Inténtalo de nuevo con un mensaje más pequeño',
@@ -15,5 +15,7 @@ module.exports = {
   'ok_here_goes': 'OK, aquí va...',
   'gasp': '*JADEAR*',
   'translate_next': 'OK, ¿qué debo traducir para ti?',
-  'need_help?': '¿Necesitas ayuda?'
+  'need_help?': '¿Necesitas ayuda?',
+  'suggest_from': '%s a...',
+  'suggestions': 'Algunas opciones populares:'
 }

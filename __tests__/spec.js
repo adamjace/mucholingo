@@ -220,7 +220,7 @@ describe('Bot tests', () => {
     })
 
     it('should call handleGetStarted postback', (done) => {
-      payload.postback.payload = '#getstarted'
+      payload.postback.payload = _const.responseType.getStarted
       const reply = {}
       spyOn(MessageHandler, 'handleGetStarted')
       MessageHandler.handleMessage(payload, reply).then(() => {
@@ -231,7 +231,7 @@ describe('Bot tests', () => {
     })
 
     it('should call handleHelp postback', (done) => {
-      payload.postback.payload = '#help'
+      payload.postback.payload = _const.responseType.help
       spyOn(MessageHandler, 'handleHelp')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
@@ -241,7 +241,7 @@ describe('Bot tests', () => {
     })
 
     it('should call handleReset postback', (done) => {
-      payload.postback.payload = '#reset'
+      payload.postback.payload = _const.responseType.reset
       spyOn(MessageHandler, 'handleReset')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleReset).toHaveBeenCalled()
@@ -251,7 +251,7 @@ describe('Bot tests', () => {
     })
 
     it('should call handleSwitch postback', (done) => {
-      payload.postback.payload = '#switch'
+      payload.postback.payload = _const.responseType.switch
       spyOn(MessageHandler, 'handleSwitch')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSwitch).toHaveBeenCalled()
@@ -261,7 +261,7 @@ describe('Bot tests', () => {
     })
 
     it('should call handleShowAllLanguages postback', (done) => {
-      payload.postback.payload = '#list'
+      payload.postback.payload = _const.responseType.list
       spyOn(MessageHandler, 'handleShowAllLanguages')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleShowAllLanguages).toHaveBeenCalled()
@@ -272,7 +272,7 @@ describe('Bot tests', () => {
 
     it('should call handleHelp quick reply postback', (done) => {
       payload.postback = null
-      payload.message = {quick_reply:{payload: '#help'}}
+      payload.message = {quick_reply:{payload: _const.responseType.help}}
       spyOn(MessageHandler, 'handleHelp')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
@@ -282,11 +282,33 @@ describe('Bot tests', () => {
     })
 
     it('should call handleSetContext postback', (done) => {
-      payload.postback.payload = '#preset'
+      payload.postback.payload = _const.responseType.setDefault
       const reply = {}
       spyOn(MessageHandler, 'handleSetContext')
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
+        done()
+      })
+    })
+
+    it('should call handleShowSuggestions postback', (done) => {
+      payload.postback.payload = _const.responseType.wantSuggestions
+      const reply = {}
+      spyOn(MessageHandler, 'handleShowSuggestions')
+      MessageHandler.handleMessage(payload, reply).then(() => {
+        expect(MessageHandler.handleShowSuggestions).toHaveBeenCalled()
+        expect(lastReply).not.toEqual(_const.lostInTranslation)
+        done()
+      })
+    })
+
+    it('should call handleSetContextFromSuggestion postback', (done) => {
+      payload.postback.payload = `${_const.responseType.takeSuggestion}es`
+      const reply = {}
+      spyOn(MessageHandler, 'handleSetContextFromSuggestion')
+      MessageHandler.handleMessage(payload, reply).then(() => {
+        expect(MessageHandler.handleSetContextFromSuggestion).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
         done()
       })

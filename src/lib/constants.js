@@ -9,17 +9,22 @@ const responseType = {
   reset: '#reset',
   switch: '#switch',
   list: '#list',
-  preset: '#preset'
+  setDefault: '#setdefault',
+  wantSuggestions: '#wantsuggestions',
+  takeSuggestion: '#suggestion:'
 }
 
 const languageExamples = [
-  'en', 'de', 'it', 'ko', 'nl', 'jp', 'hi',
+  'en', 'de', 'it', 'ko', 'nl', 'ja', 'ar',
   'es', 'fr', 'id', 'ru', 'zh-CN', 'el'
 ]
 
+const popularLanguages = ['es', 'en', 'fr', 'ja', 'de', 'ar']
+
 module.exports = {
-  maxTextReplyLength: maxTextReplyLength,
-  lostInTranslation: lostInTranslation,
-  responseType: responseType,
-  languageExamples: languageExamples
+  maxTextReplyLength,
+  lostInTranslation,
+  responseType,
+  languageExamples,
+  popularLanguages
 }

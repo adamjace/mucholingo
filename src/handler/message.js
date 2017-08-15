@@ -63,6 +63,10 @@ class MessageHandler {
             reject(err)
           }
 
+          // check for all incoming request types from the user, theses can be one of:
+          // 1) postbacks (menu option)
+          // 2) quick replies (quick action buttons)
+          // 3) messages (direct messaging)
           if (postback && postback.payload) {
             return resolve(this.handlePostBack(response.context, postback, profile, sender, reply, t))
           }
@@ -119,9 +123,15 @@ class MessageHandler {
       else if (postback.payload === _const.responseType.list) {
         return resolve(this.handleShowAllLanguages(sender, reply, t))
       }
-      else if (postback.payload === _const.responseType.preset) {
+      else if (postback.payload === _const.responseType.setDefault) {
         const newContext = getContextFromCode('es:en', t)
         return resolve(this.handleSetContext(newContext.code, newContext.from, newContext.to, sender, null, reply, t))
+      }
+      else if (postback.payload === _const.responseType.wantSuggestions) {
+        return resolve(this.handleShowSuggestions(profile, reply, t))
+      }
+      else if (_.includes(postback.payload, _const.responseType.takeSuggestion)) {
+        return resolve(this.handleSetContextFromSuggestion(postback.payload, sender, profile, null, reply, t))
       }
     })
   }
@@ -172,7 +182,7 @@ class MessageHandler {
         options.push({
           'type': 'postback',
           'title': t.say('lang_to_lang', 'Español', 'Inglés'),
-          'payload': _const.responseType.preset
+          'payload': _const.responseType.setDefault
         })
       }
 
@@ -193,19 +203,40 @@ class MessageHandler {
     })
   }
 
+  // handleShowSuggestions
+  handleShowSuggestions(profile, reply, t) {
+    Logger.log('info', 'handleShowSuggestions')
+    return async((resolve, reject) => {
+      const response = {
+        text: t.say('suggestions'),
+        quick_replies: []
+      }
+      const langs = getPopularSuggestions(profile)
+      langs.forEach((code) => {
+        response.quick_replies.push({
+          'content_type': 'text',
+          'title': getLanguageName(code, t),
+          'payload': `${_const.responseType.takeSuggestion}${code}`
+        })
+      })
+      return reply(response, (err) => {
+        if (err) return reject(err)
+        return resolve()
+      })
+    })
+  }
+
   // handleShowAllLanguages
   // due to Facebook's payload size limit we need to chunk the list into seprate bits
   handleShowAllLanguages(sender, reply, t) {
-    return async((resolve, reject) => {
+    Logger.log('info', 'handleShowAllLanguages')
+    return async((resolve) => {
       const list = getAllLanguageNames(t)
       const first = list.splice(0, list.length / 3)
       const second = list.splice(0, list.length / 2)
-      reply({text: `${t.say('ok_here_goes')}\n\n${first.toString().replace(/,/g, ', ')}`}, (err) => {
-        if (err) return reject(err)
-        reply({text: `${second.toString().replace(/,/g, ', ')}`}, (err) => {
-          if (err) return reject(err)
-          reply({text: `${list.toString().replace(/,/g, ', ')}\n\n ${t.say('gasp')}`}, (err) => {
-            if (err) return reject(err)
+      reply({text: `${t.say('ok_here_goes')}\n\n${first.toString().replace(/,/g, ', ')}`}, () => {
+        reply({text: `${second.toString().replace(/,/g, ', ')}`}, () => {
+          reply({text: `${list.toString().replace(/,/g, ', ')}\n\n ${t.say('gasp')}`}, () => {
             resolve()
           })
         })
@@ -215,6 +246,7 @@ class MessageHandler {
 
   // handleReset
   handleReset(sender, reply, t) {
+    Logger.log('info', 'handleReset')
     return repo(sender.id).set('').then((err) => {
       if (err) Logger.log('error', err)
       return reply({
@@ -228,6 +260,7 @@ class MessageHandler {
 
   // handleSwitch
   handleSwitch(context, sender, reply, t) {
+    Logger.log('info', 'handleSwitch')
     context = switchContext(getContextFromCode(context, t))
     return this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)
   }
@@ -244,11 +277,18 @@ class MessageHandler {
         return resolve()
       }
 
-      let text = t.say('unreconised')
-      if (context.hasOne) text = t.say('part_unrecognised', context.from)
-      return reply({
-        text: text
-      }, (err) => {
+      const response = {}
+      response.text = context.hasOne ? t.say('part_unrecognised', context.from) : t.say('unreconised')
+      response.quick_replies = [{
+        'content_type': 'text',
+        'title': t.say('need_help?'),
+        'payload': '#help'
+      }, {
+        'content_type': 'text',
+        'title': t.say('suggest_from', getLanguageNameLocale(profile, t)),
+        'payload': _const.responseType.wantSuggestions
+      }]
+      return reply(response, (err) => {
         if (err) return reject(err)
         mp.track('I incorrectly set context', sender, message)
         return resolve()
@@ -278,6 +318,16 @@ class MessageHandler {
     return false
   }
 
+  // handleSetContextFromSuggestion
+  handleSetContextFromSuggestion(payload, sender, profile, message, reply, t) {
+    Logger.log('info', 'handleSetContextFromSuggestion')
+    const from = getLocale(profile)
+    const to = payload.split(':')[1]
+    const code = `${from}:${to}`
+    const context = getContextFromCode(code, t)
+    return this.handleSetContext(code, context.from, context.to, sender, message, reply, t)
+  }
+
   // handleSetContext
   handleSetContext(code, from, to, sender, message, reply, t) {
     Logger.log('info', 'handleSetContext')
@@ -294,6 +344,7 @@ class MessageHandler {
 
   // handleTranslation
   handleTranslation(context, sender, message, reply, t) {
+    Logger.log('info', 'handleTranslation')
     let response = {}
     return translate(message.text, context).
       then((result) => {
@@ -324,16 +375,17 @@ class MessageHandler {
   // expose these for tests
   _privates() {
     return {
-      getContextFromMessage: getContextFromMessage,
-      getContextFromCode: getContextFromCode,
-      switchContext: switchContext,
-      getLanguageName: getLanguageName,
-      getAllLanguageNames: getAllLanguageNames,
-      getLocale: getLocale,
-      getLanguageNameLocale: getLanguageNameLocale,
-      getContextSuggestion: getContextSuggestion,
-      getRandom: getRandom,
-      isPossibleChangeCommand: isPossibleChangeCommand
+      getContextFromMessage,
+      getContextFromCode,
+      switchContext,
+      getLanguageName,
+      getAllLanguageNames,
+      getLocale,
+      getLanguageNameLocale,
+      getContextSuggestion,
+      getPopularSuggestions,
+      getRandom,
+      isPossibleChangeCommand
     }
   }
 }
@@ -447,6 +499,13 @@ const getContextSuggestion = (profile, t) => {
 
   shuffled = _.remove(shuffled, (n) => { return n !== localeLanguageName })
   return [localeLanguageName, getLanguageName(shuffled[0], t)]
+}
+
+// getPopularSuggestions
+const getPopularSuggestions = (profile) => {
+  const locale = getLocale(profile)
+  const suggestions = _.clone(_const.popularLanguages)
+  return suggestions.filter((lang) => lang !== locale)
 }
 
 // shuffleArray
