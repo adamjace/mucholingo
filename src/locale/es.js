@@ -16,6 +16,6 @@ module.exports = {
   'gasp': '*JADEAR*',
   'translate_next': 'OK, ¿qué debo traducir para ti?',
   'need_help?': '¿Necesitas ayuda?',
-  'suggest_from': '%s a...',
+  'suggest_from': '%s a ...',
   'suggestions': 'Algunas opciones populares:'
 }
