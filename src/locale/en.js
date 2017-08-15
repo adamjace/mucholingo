@@ -16,6 +16,6 @@ module.exports = {
   'gasp': '*GASP*',
   'translate_next': 'OK, what should I translate for you next?',
   'need_help?': 'Need help?',
-  'suggest_from': '%s to...',
+  'suggest_from': '%s to ...',
   'suggestions': 'A few popular options:'
 }
