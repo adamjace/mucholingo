@@ -1,7 +1,7 @@
 'use strict'
 
 const state = require('../lib/state')
-const promise = require('../lib/async')
+const promisify = require('../lib/promisify')
 
 class ProfileHandler {
 
@@ -10,7 +10,7 @@ class ProfileHandler {
   }
 
   getProfile(sender, cb) {
-    return promise((resolve, reject) => {
+    return promisify((resolve, reject) => {
       let next = this.bot
       const profile = state.get(sender.id)
       if (profile !== undefined) {
