@@ -251,10 +251,10 @@ class MessageHandler {
     return promise((resolve, reject) => {
       const context = getContextFromMessage(message.text, false, t)
       if (context.hasTwo && context.from !== context.to) {
-        resolve(this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t))
+        return this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t)
       }
       if (this.handleGeneralResponse(sender, profile, message, reply, t) !== false) {
-        resolve()
+        return resolve()
       }
 
       const response = {}
