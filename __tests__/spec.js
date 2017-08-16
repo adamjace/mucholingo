@@ -80,8 +80,8 @@ describe('Bot tests', () => {
     })
   })
 
-  describe('DB client test', async () => {
-    it('should set and get context from the db', async (done) => {
+  describe('DB client test', () => {
+    it('should set and get context from the db', (done) => {
       const testValue = 'test_value'
       repo(userId).set(testValue).then(() => {
         repo(userId).get().then((response) => {
