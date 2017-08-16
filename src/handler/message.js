@@ -4,7 +4,7 @@ const ProfileHandler = require('./profile')
 const Logger = require('../lib/logger')
 const Localise = require('../locale/localise')
 const Timer = require('../lib/timer')
-const async = require('../lib/async')
+const promise = require('../lib/async')
 const translate = require('../lib/translator')
 const mp = require('../lib/mixpanel')
 const state = require('../lib/state')
@@ -22,7 +22,7 @@ class MessageHandler {
   // handleMessage is our main message handler
   // We need to handle all incoming messages that may be:
   // postbacks, quick replies, help commands and translations
-  handleMessage(payload, reply) {
+  async handleMessage(payload, reply) {
 
     const timer = new Timer()
     timer.start()
@@ -34,128 +34,108 @@ class MessageHandler {
 
     // we don't care about handling our own responses
     if (sender.id === config.fb_page_id)
-      return false
+      return
 
-    return async((resolve, reject) => {
+    // getProfile retrieves user data from state first if it exists, otherwise
+    // performs an aysnc call to Facebook to get the users information
+    const profile = await this.profileHandler.getProfile(sender)
 
-      // getProfile retrieves user data from state first if it exists, otherwise
-      // performs an aysnc call to Facebook to get the users information
-      this.profileHandler.getProfile(sender, (err, profile) => {
+    // cache the user for subsequent requests
+    state.set(sender.id, profile)
 
-        if (err) {
-          Logger.log('error', JSON.stringify(err))
-          reject(err)
-        }
+    // create new localised translator
+    // this is used for conversations between the bot and the user
+    const t = new Localise(getLocale(profile))
 
-        // cache the user for subsequent requests
-        state.set(sender.id, profile)
+    // retrieve the users context (their translation mode) from state if it
+    // exists, otherwise perform a fetch from redis
+    const response = await repo(sender.id).get()
 
-        // create new localised translator
-        // this is used for conversations between the bot and the user
-        const t = new Localise(getLocale(profile))
+    // check for all incoming request types from the user, theses can be one of:
+    // 1) postbacks (menu option)
+    // 2) quick replies (quick action buttons)
+    // 3) messages (direct messaging)
+    if (postback && postback.payload) {
+      await this.handlePostBack(response.context, postback, profile, sender, reply, t)
+    }
+    else if (message && message.quick_reply && message.quick_reply.payload) {
+      await this.handlePostBack(response.context, message.quick_reply, profile, sender, reply, t)
+    }
+    else if (_.includes(message.text.toLowerCase(), t.say('help')) && !response.context) {
+      this.handleHelp(response.context, profile, sender, reply, t)
+    }
+    else if (message.text === _const.responseType.reset || message.text === _const.responseType.switch) {
+      await this.handlePostBack(response.context, {payload: message.text}, profile, sender, reply, t)
+    }
+    else if (!response.context) {
+      await this.handleNoContext(sender, profile, message, reply, t)
+    }
+    else if (isPossibleChangeCommand(message.text, t)) {
+      // we have context and the user has sent a text message, before translation check if this is
+      // a possible direct change command: {lang} to {lang}
+      const context = getContextFromMessage(message.text, true, t)
+      if (context.hasTwo && context.from !== context.to) {
+        await this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)
+      }
+    } else {
+      // we made it! translate the message
+      await this.handleTranslation(response.context, sender, message, reply, t)
+    }
 
-        // retrieve the users context (their translation mode) from state if it
-        // exists, otherwise perform a fetch from redis
-        repo(sender.id).get().then((response, err) => {
-
-          if (err) {
-            Logger.log('error', JSON.stringify(err))
-            reject(err)
-          }
-
-          // check for all incoming request types from the user, theses can be one of:
-          // 1) postbacks (menu option)
-          // 2) quick replies (quick action buttons)
-          // 3) messages (direct messaging)
-          if (postback && postback.payload) {
-            return resolve(this.handlePostBack(response.context, postback, profile, sender, reply, t))
-          }
-          else if (message && message.quick_reply && message.quick_reply.payload) {
-            return resolve(this.handlePostBack(response.context, message.quick_reply, profile, sender, reply, t))
-          }
-          else if (!message.text) {
-            return resolve()
-          }
-          else if (_.includes(message.text.toLowerCase(), t.say('help')) && !response.context) {
-            return resolve(this.handleHelp(response.context, profile, sender, reply, t))
-          }
-          else if (message.text === _const.responseType.reset || message.text === _const.responseType.switch) {
-            return resolve(this.handlePostBack(response.context, {payload: message.text}, profile, sender, reply, t))
-          }
-          else if (!response.context) {
-            return resolve(this.handleNoContext(sender, profile, message, reply, t))
-          }
-          else if (isPossibleChangeCommand(message.text, t)) {
-            // we have context and the user has sent a text message, before translation check if this is
-            // a possible direct change command: {lang} to {lang}
-            const context = getContextFromMessage(message.text, true, t)
-            if (context.hasTwo && context.from !== context.to) {
-              return (resolve(this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)))
-            }
-          }
-          // we made it! translate the message
-          return resolve(this.handleTranslation(response.context, sender, message, reply, t))
-        })
-      })
-    })
-    .finally(() => {
-      timer.stop()
-      Logger.log('info', timer.report)
-    })
+    timer.stop()
+    Logger.log('info', timer.report)
   }
 
   // handlePostBack
-  handlePostBack(context, postback, profile, sender, reply, t) {
+  async handlePostBack(context, postback, profile, sender, reply, t) {
     Logger.log('info', 'handlePostBack')
-    return async((resolve) => {
-      if (postback.payload === _const.responseType.getStarted) {
-        return resolve(this.handleGetStarted(sender, profile, reply, t))
-      }
-      else if (postback.payload === _const.responseType.help) {
-        return resolve(this.handleHelp(context, profile, sender, reply, t))
-      }
-      else if (postback.payload === _const.responseType.reset) {
-        return resolve(this.handleReset(sender, reply, t))
-      }
-      else if (postback.payload === _const.responseType.switch) {
-        return resolve(this.handleSwitch(context, sender, reply, t))
-      }
-      else if (postback.payload === _const.responseType.list) {
-        return resolve(this.handleShowAllLanguages(sender, reply, t))
-      }
-      else if (postback.payload === _const.responseType.setDefault) {
-        const newContext = getContextFromCode('es:en', t)
-        return resolve(this.handleSetContext(newContext.code, newContext.from, newContext.to, sender, null, reply, t))
-      }
-      else if (postback.payload === _const.responseType.wantSuggestions) {
-        return resolve(this.handleShowSuggestions(profile, reply, t))
-      }
-      else if (_.includes(postback.payload, _const.responseType.takeSuggestion)) {
-        return resolve(this.handleSetContextFromSuggestion(postback.payload, sender, profile, null, reply, t))
-      }
-    })
+    if (postback.payload === _const.responseType.getStarted) {
+      return await this.handleGetStarted(sender, profile, reply, t)
+    }
+    else if (postback.payload === _const.responseType.help) {
+      return await this.handleHelp(context, profile, sender, reply, t)
+    }
+    else if (postback.payload === _const.responseType.reset) {
+      return await this.handleReset(sender, reply, t)
+    }
+    else if (postback.payload === _const.responseType.switch) {
+      return await this.handleSwitch(context, sender, reply, t)
+    }
+    else if (postback.payload === _const.responseType.list) {
+      return await this.handleShowAllLanguages(sender, reply, t)
+    }
+    else if (postback.payload === _const.responseType.setDefault) {
+      const newContext = getContextFromCode('es:en', t)
+      return await this.handleSetContext(newContext.code, newContext.from, newContext.to, sender, null, reply, t)
+    }
+    else if (postback.payload === _const.responseType.wantSuggestions) {
+      return await this.handleShowSuggestions(profile, reply, t)
+    }
+    else if (_.includes(postback.payload, _const.responseType.takeSuggestion)) {
+      return await this.handleSetContextFromSuggestion(postback.payload, sender, profile, null, reply, t)
+    }
   }
 
   // handleGetStarted
-  handleGetStarted(sender, profile, reply, t) {
+  async handleGetStarted(sender, profile, reply, t) {
     Logger.log('info', 'handleGetStarted')
-    return async((resolve, reject) => {
+    return promise((resolve, reject) => {
       const suggestion = getContextSuggestion(profile, t)
-      return reply({
+      reply({
         text: t.say('getting_started', profile && profile.first_name, suggestion[0], suggestion[1]),
       }, (err) => {
-        if (err) return reject(err)
+        if (err) reject(err)
         mp.setPerson(sender, profile)
         mp.track('I click to get started', sender)
-        return resolve()
+        resolve()
       })
     })
   }
 
   // handleHelp
-  handleHelp(context, profile, sender, reply, t) {
+  async handleHelp(context, profile, sender, reply, t) {
     Logger.log('info', 'handleHelp')
-    return async((resolve, reject) => {
+    return promise((resolve, reject) => {
       const suggestion = getContextSuggestion(profile, t)
       let text = t.say('ask_for_help', suggestion[0], suggestion[1])
       let options = [{
@@ -196,17 +176,17 @@ class MessageHandler {
           }
         }
       }, (err) => {
-        if (err) return reject(err)
+        if (err) reject(err)
         mp.track('I ask for help', sender)
-        return resolve()
+        resolve()
       })
     })
   }
 
   // handleShowSuggestions
-  handleShowSuggestions(profile, reply, t) {
+  async handleShowSuggestions(profile, reply, t) {
     Logger.log('info', 'handleShowSuggestions')
-    return async((resolve, reject) => {
+    return promise((resolve, reject) => {
       const response = {
         text: t.say('suggestions'),
         quick_replies: []
@@ -219,18 +199,18 @@ class MessageHandler {
           'payload': `${_const.responseType.takeSuggestion}${code}`
         })
       })
-      return reply(response, (err) => {
-        if (err) return reject(err)
-        return resolve()
+      reply(response, (err) => {
+        if (err) reject(err)
+        resolve()
       })
     })
   }
 
   // handleShowAllLanguages
   // due to Facebook's payload size limit we need to chunk the list into seprate bits
-  handleShowAllLanguages(sender, reply, t) {
+  async handleShowAllLanguages(sender, reply, t) {
     Logger.log('info', 'handleShowAllLanguages')
-    return async((resolve) => {
+    return promise((resolve) => {
       const list = getAllLanguageNames(t)
       const first = list.splice(0, list.length / 3)
       const second = list.splice(0, list.length / 2)
@@ -245,11 +225,11 @@ class MessageHandler {
   }
 
   // handleReset
-  handleReset(sender, reply, t) {
+  async handleReset(sender, reply, t) {
     Logger.log('info', 'handleReset')
     return repo(sender.id).set('').then((err) => {
       if (err) Logger.log('error', err)
-      return reply({
+      reply({
         text: t.say('translate_next')
       }, (err) => {
         if (err) Logger.log('error', err)
@@ -259,22 +239,22 @@ class MessageHandler {
   }
 
   // handleSwitch
-  handleSwitch(context, sender, reply, t) {
+  async handleSwitch(context, sender, reply, t) {
     Logger.log('info', 'handleSwitch')
     context = switchContext(getContextFromCode(context, t))
-    return this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)
+    return await this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)
   }
 
   // handleNoContext
-  handleNoContext(sender, profile, message, reply, t) {
+  async handleNoContext(sender, profile, message, reply, t) {
     Logger.log('info', 'handleNoContext')
-    return async((resolve, reject) => {
+    return promise((resolve, reject) => {
       const context = getContextFromMessage(message.text, false, t)
       if (context.hasTwo && context.from !== context.to) {
-        return resolve(this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t))
+        resolve(this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t))
       }
       if (this.handleGeneralResponse(sender, profile, message, reply, t) !== false) {
-        return resolve()
+        resolve()
       }
 
       const response = {}
@@ -288,10 +268,10 @@ class MessageHandler {
         'title': t.say('suggest_from', getLanguageNameLocale(profile, t)),
         'payload': _const.responseType.wantSuggestions
       }]
-      return reply(response, (err) => {
-        if (err) return reject(err)
+      reply(response, (err) => {
+        if (err) reject(err)
         mp.track('I incorrectly set context', sender, message)
-        return resolve()
+        resolve()
       })
     })
   }
@@ -299,27 +279,27 @@ class MessageHandler {
   // handleGeneralResponse such as hello, goodbye etc
   handleGeneralResponse(sender, profile, message, reply) {
     if (_.includes(['goodbye', 'bye', 'adios', 'ciao', 'seeya', 'see you', 'later'], message.text.toLowerCase())) {
-      return reply({
+      reply({
         text: `Adiós ${profile.gender === 'male' ? 'muchacho' : 'muchacha'}`
       }, () => {
         mp.track('I say goodbye without context', sender, message)
       })
     }
     if (_.includes(['hello', 'hi', 'howdy', 'hallo', 'yo', 'hey', 'sup', 'hiya', 'hola'], message.text.toLowerCase())) {
-      return reply({
+      reply({
         text: getRandom([`Hi ${profile.first_name}!`, 'Hello', '¡Hola!', `Hey ${profile.first_name}!`, 'Oh hey there!', 'Hallo', 'Howdy', 'Oh Hiiiiii'])
       }, () => {
         mp.track('I say hello without context', sender, message)
       })
     }
     if (_.includes(message.text.toLowerCase(), 'hmm')) {
-      return reply({ text: 'hmmmm...' })
+      reply({ text: 'hmmmm...' })
     }
     return false
   }
 
   // handleSetContextFromSuggestion
-  handleSetContextFromSuggestion(payload, sender, profile, message, reply, t) {
+  async handleSetContextFromSuggestion(payload, sender, profile, message, reply, t) {
     Logger.log('info', 'handleSetContextFromSuggestion')
     const from = getLocale(profile)
     const to = payload.split(':')[1]
@@ -329,11 +309,11 @@ class MessageHandler {
   }
 
   // handleSetContext
-  handleSetContext(code, from, to, sender, message, reply, t) {
+  async handleSetContext(code, from, to, sender, message, reply, t) {
     Logger.log('info', 'handleSetContext')
     return repo(sender.id).set(code).then((err) => {
       if (err) Logger.log('error', err)
-      return reply({
+      reply({
         text: t.say('set_context', from, to)
       }, (err) => {
         if (err) throw err
@@ -343,13 +323,13 @@ class MessageHandler {
   }
 
   // handleTranslation
-  handleTranslation(context, sender, message, reply, t) {
+  async handleTranslation(context, sender, message, reply, t) {
     Logger.log('info', 'handleTranslation')
     let response = {}
     return translate(message.text, context).
       then((result) => {
         if (result.length > _const.maxTextReplyLength) {
-          return reply({text: t.say('too_long')})
+          reply({text: t.say('too_long')})
         }
         response.text = result
         // check if the user actually wants help by passing a quick reply button with the translated text
