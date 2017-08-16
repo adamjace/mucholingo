@@ -1,6 +1,6 @@
 'use strict'
 
-const async = require('../async')
+const promise = require('../async')
 
 const translate = () => {
   return promise((resolve) => {

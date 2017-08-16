@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use strict'
 
 const reset = '\x1b[0m'
@@ -19,3 +20,4 @@ class Logger {
 }
 
 module.exports = Logger
+/* eslint-enable no-console */

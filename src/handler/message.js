@@ -90,7 +90,7 @@ class MessageHandler {
   }
 
   // send is a wrapper for the bot reply method which returns a promise
-  send(reply, payload, cb) {
+  send(reply, payload) {
     return promise((resolve, reject) => {
       reply(payload, (err) => {
         if (err) reject(err)
@@ -106,22 +106,23 @@ class MessageHandler {
     if (_.includes(postback.payload, _const.responseType.takeSuggestion))
       return this.handleSetContextFromSuggestion(postback.payload, sender, profile, null, reply, t)
 
+    let newContext = {}
     switch(postback.payload) {
-      case _const.responseType.getStarted:
-        return this.handleGetStarted(sender, profile, reply, t)
-      case _const.responseType.help:
-        return this.handleHelp(context, profile, sender, reply, t)
-      case _const.responseType.reset:
-        return this.handleReset(sender, reply, t)
-      case _const.responseType.switch:
-        return this.handleSwitch(context, sender, reply, t)
-      case _const.responseType.list:
-        return this.handleShowAllLanguages(sender, reply, t)
-      case _const.responseType.setDefault:
-        const newContext = getContextFromCode('es:en', t)
-        return this.handleSetContext(newContext.code, newContext.from, newContext.to, sender, null, reply, t)
-      case _const.responseType.wantSuggestions:
-        return this.handleShowSuggestions(profile, reply, t)
+    case _const.responseType.getStarted:
+      return this.handleGetStarted(sender, profile, reply, t)
+    case _const.responseType.help:
+      return this.handleHelp(context, profile, sender, reply, t)
+    case _const.responseType.reset:
+      return this.handleReset(sender, reply, t)
+    case _const.responseType.switch:
+      return this.handleSwitch(context, sender, reply, t)
+    case _const.responseType.list:
+      return this.handleShowAllLanguages(sender, reply, t)
+    case _const.responseType.setDefault:
+      newContext = getContextFromCode('es:en', t)
+      return this.handleSetContext(newContext.code, newContext.from, newContext.to, sender, null, reply, t)
+    case _const.responseType.wantSuggestions:
+      return this.handleShowSuggestions(profile, reply, t)
     }
   }
 
@@ -201,7 +202,7 @@ class MessageHandler {
       })
     })
 
-    mp.track('I ask to see suggestions', sender)
+    mp.track('I ask to see suggestions')
     return this.send(reply, response)
   }
 

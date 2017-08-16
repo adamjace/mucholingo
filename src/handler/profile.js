@@ -9,7 +9,7 @@ class ProfileHandler {
     this.bot = bot
   }
 
-  getProfile(sender, cb) {
+  getProfile(sender) {
     return promise((resolve, reject) => {
       let next = this.bot
       const profile = state.get(sender.id)
