@@ -122,7 +122,7 @@ class MessageHandler {
       newContext = getContextFromCode('es:en', t)
       return this.handleSetContext(newContext.code, newContext.from, newContext.to, sender, null, reply, t)
     case _const.responseType.wantSuggestions:
-      return this.handleShowSuggestions(profile, reply, t)
+      return this.handleShowSuggestions(profile, sender, reply, t)
     }
   }
 
@@ -186,7 +186,7 @@ class MessageHandler {
   }
 
   // handleShowSuggestions
-  handleShowSuggestions(profile, reply, t) {
+  handleShowSuggestions(profile, sender, reply, t) {
     Logger.log('info', 'handleShowSuggestions')
 
     const response = {
@@ -202,7 +202,7 @@ class MessageHandler {
       })
     })
 
-    mp.track('I ask to see suggestions')
+    mp.track('I ask to see suggestions', sender)
     return this.send(reply, response)
   }
 
