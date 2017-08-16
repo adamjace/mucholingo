@@ -110,23 +110,17 @@ class MessageHandler {
     switch(postback.payload) {
     case _const.responseType.getStarted:
       return this.handleGetStarted(sender, profile, reply, t)
-
     case _const.responseType.help:
       return this.handleHelp(context, profile, sender, reply, t)
-
     case _const.responseType.reset:
       return this.handleReset(sender, reply, t)
-
     case _const.responseType.switch:
       return this.handleSwitch(context, sender, reply, t)
-
     case _const.responseType.list:
       return this.handleShowAllLanguages(sender, reply, t)
-
     case _const.responseType.setDefault:
       newContext = getContextFromCode('es:en', t)
       return this.handleSetContext(newContext.code, newContext.from, newContext.to, sender, null, reply, t)
-
     case _const.responseType.wantSuggestions:
       return this.handleShowSuggestions(profile, sender, reply, t)
     }
