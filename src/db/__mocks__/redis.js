@@ -1,16 +1,16 @@
-const async = require('../../lib/async')
+const promise = require('../../lib/async')
 
 let context = ''
 
 const getAsync = () => {
-  return async((resolve) => {
+  return promise((resolve) => {
     resolve(context)
   })
 }
 
 const setAsync = (senderId, context) => {
   db.__setContext(context)
-  return async((resolve) => {
+  return promise((resolve) => {
     resolve(context)
   })
 }

@@ -27,8 +27,8 @@ const options = {
   ca: [fs.readFileSync(config.ssl_ca)]
 }
 https.createServer(options, app).listen(443)
-Logger.log('Server running over https')
+Logger.log('info', 'Server running over https')
 
 // start the (non https) server
 http.createServer(app).listen(`${config.port}`)
-Logger.log(`Server running over http on port ${config.port}`)
+Logger.log('info', `Server running over http on port ${config.port}`)
