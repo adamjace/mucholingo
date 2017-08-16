@@ -254,46 +254,46 @@ class MessageHandler {
         return this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t)
       }
       else if (this.handleGeneralResponse(sender, profile, message, reply, t) !== false) {
-        resolve()
-      } else {
-        const response = {}
-        response.text = context.hasOne ? t.say('part_unrecognised', context.from) : t.say('unreconised')
-        response.quick_replies = [{
-          'content_type': 'text',
-          'title': t.say('need_help?'),
-          'payload': '#help'
-        }, {
-          'content_type': 'text',
-          'title': t.say('suggest_from', getLanguageNameLocale(profile, t)),
-          'payload': _const.responseType.wantSuggestions
-        }]
-        reply(response, (err) => {
-          if (err) reject(err)
-          mp.track('I incorrectly set context', sender, message)
-          resolve()
-        })
+        return resolve()
       }
+
+      const response = {}
+      response.text = context.hasOne ? t.say('part_unrecognised', context.from) : t.say('unreconised')
+      response.quick_replies = [{
+        'content_type': 'text',
+        'title': t.say('need_help?'),
+        'payload': '#help'
+      }, {
+        'content_type': 'text',
+        'title': t.say('suggest_from', getLanguageNameLocale(profile, t)),
+        'payload': _const.responseType.wantSuggestions
+      }]
+      reply(response, (err) => {
+        if (err) reject(err)
+        mp.track('I incorrectly set context', sender, message)
+        resolve()
+      })
     })
   }
 
   // handleGeneralResponse such as hello, goodbye etc
   handleGeneralResponse(sender, profile, message, reply) {
     if (_.includes(['goodbye', 'bye', 'adios', 'ciao', 'seeya', 'see you', 'later'], message.text.toLowerCase())) {
-      reply({
+      return reply({
         text: `Adiós ${profile.gender === 'male' ? 'muchacho' : 'muchacha'}`
       }, () => {
         mp.track('I say goodbye without context', sender, message)
       })
     }
     if (_.includes(['hello', 'hi', 'howdy', 'hallo', 'yo', 'hey', 'sup', 'hiya', 'hola'], message.text.toLowerCase())) {
-      reply({
+      return reply({
         text: getRandom([`Hi ${profile.first_name}!`, 'Hello', '¡Hola!', `Hey ${profile.first_name}!`, 'Oh hey there!', 'Hallo', 'Howdy', 'Oh Hiiiiii'])
       }, () => {
         mp.track('I say hello without context', sender, message)
       })
     }
     if (_.includes(message.text.toLowerCase(), 'hmm')) {
-      reply({ text: 'hmmmm...' })
+      return reply({ text: 'hmmmm...' })
     }
     return false
   }
