@@ -1,9 +1,9 @@
 'use strict'
 
-const async = require('../async')
+const promisify = require('../promisify')
 
 const translate = () => {
-  return async((resolve) => {
+  return promisify((resolve) => {
     resolve(true)
   })
 }
