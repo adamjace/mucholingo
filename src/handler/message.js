@@ -253,26 +253,26 @@ class MessageHandler {
       if (context.hasTwo && context.from !== context.to) {
         return this.handleSetContext(context.code, context.from, context.to, sender, message, reply, t)
       }
-      if (this.handleGeneralResponse(sender, profile, message, reply, t) !== false) {
-        return resolve()
-      }
-
-      const response = {}
-      response.text = context.hasOne ? t.say('part_unrecognised', context.from) : t.say('unreconised')
-      response.quick_replies = [{
-        'content_type': 'text',
-        'title': t.say('need_help?'),
-        'payload': '#help'
-      }, {
-        'content_type': 'text',
-        'title': t.say('suggest_from', getLanguageNameLocale(profile, t)),
-        'payload': _const.responseType.wantSuggestions
-      }]
-      reply(response, (err) => {
-        if (err) reject(err)
-        mp.track('I incorrectly set context', sender, message)
+      else if (this.handleGeneralResponse(sender, profile, message, reply, t) !== false) {
         resolve()
-      })
+      } else {
+        const response = {}
+        response.text = context.hasOne ? t.say('part_unrecognised', context.from) : t.say('unreconised')
+        response.quick_replies = [{
+          'content_type': 'text',
+          'title': t.say('need_help?'),
+          'payload': '#help'
+        }, {
+          'content_type': 'text',
+          'title': t.say('suggest_from', getLanguageNameLocale(profile, t)),
+          'payload': _const.responseType.wantSuggestions
+        }]
+        reply(response, (err) => {
+          if (err) reject(err)
+          mp.track('I incorrectly set context', sender, message)
+          resolve()
+        })
+      }
     })
   }
 
