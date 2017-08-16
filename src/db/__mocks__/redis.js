@@ -1,16 +1,16 @@
-const promisify = require('../../lib/promisify')
+const promise = require('../../lib/async')
 
 let context = ''
 
 const getAsync = () => {
-  return promisify((resolve) => {
+  return promise((resolve) => {
     resolve(context)
   })
 }
 
 const setAsync = (senderId, context) => {
   db.__setContext(context)
-  return promisify((resolve) => {
+  return promise((resolve) => {
     resolve(context)
   })
 }

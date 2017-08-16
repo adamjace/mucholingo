@@ -4,7 +4,7 @@ const ProfileHandler = require('./profile')
 const Logger = require('../lib/logger')
 const Localise = require('../locale/localise')
 const Timer = require('../lib/timer')
-const promisify = require('../lib/promisify')
+const promise = require('../lib/async')
 const translate = require('../lib/translator')
 const mp = require('../lib/mixpanel')
 const state = require('../lib/state')
@@ -91,7 +91,7 @@ class MessageHandler {
 
   // send is a wrapper for the bot reply method which returns a promise
   send(reply, payload, cb) {
-    return promisify((resolve, reject) => {
+    return promise((resolve, reject) => {
       reply(payload, (err) => {
         if (err) reject(err)
         resolve('Message delivered')

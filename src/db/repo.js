@@ -1,7 +1,7 @@
 const db = require('./redis')
 const state = require('../lib/state')
 const Logger = require('../lib/logger')
-const promisify = require('../lib/promisify')
+const promise = require('../lib/async')
 
 // repository wrapper
 // get: fetches from cache/state if it exists, or from the redis instance
@@ -12,7 +12,7 @@ const repo = (senderId) => {
   const profile = state.get(senderId) || {}
 
   const get = () => {
-    return promisify((resolve, reject) => {
+    return promise((resolve, reject) => {
       if (profile.context != null) {
         return resolve({ context: profile.context, source: 'state' })
       }
@@ -27,7 +27,7 @@ const repo = (senderId) => {
   }
 
   const set = (context) => {
-    return promisify((resolve) => {
+    return promise((resolve) => {
       setState(profile, context)
       db.setAsync(senderId, context).then(() => {
         Logger.log('info', `saving data for user "${senderId}"`)
