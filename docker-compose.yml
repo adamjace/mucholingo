@@ -1,0 +1,6 @@
+bot:
+  build: .
+  volumes:
+    - "./app:/src/app"
+  ports:
+    - "2121:2121"

@@ -13,20 +13,29 @@ const repo = require('../db/repo')
 const config = require('../config')
 const _ = require('lodash')
 
+// MessageHandler
+// Handles all incoming messages that may be of:
+// 1) postbacks (menu option)
+// 2) quick replies (quick action buttons)
+// 3) messages (direct messaging)
 class MessageHandler {
 
   constructor(bot) {
     this.profileHandler = new ProfileHandler(bot)
   }
 
-  // handleMessage is our main message handler
-  // We need to handle all incoming messages that may be:
-  // 1) postbacks (menu option)
-  // 2) quick replies (quick action buttons)
-  // 3) messages (direct messaging)
+  // send is a wrapper for the bot reply method which returns a promise
+  send(reply, payload) {
+    return promise((resolve, reject) => {
+      reply(payload, (err) => {
+        if (err) reject(err)
+        resolve('Message delivered')
+      })
+    })
+  }
+
   async handleMessage(payload, reply) {
     Logger.log('info', JSON.stringify(payload))
-
     const timer = new Timer()
     timer.start()
 
@@ -41,16 +50,11 @@ class MessageHandler {
 
     try {
       const profile = await this.profileHandler.getProfile(sender)
-
-      // cache the user for subsequent requests
       state.set(sender.id, profile)
 
       // create new localised translator
       // this is used for conversations between the bot and the user
       const t = new Localise(getLocale(profile))
-
-      // retrieve the users context (their translation mode) from state if it
-      // exists, otherwise perform a fetch from redis
       const response = await repo(sender.id).get()
 
       if (postback && postback.payload) {
@@ -87,26 +91,15 @@ class MessageHandler {
     Logger.log('info', timer.report)
   }
 
-  // send is a wrapper for the bot reply method which returns a promise
-  send(reply, payload) {
-    return promise((resolve, reject) => {
-      reply(payload, (err) => {
-        if (err) reject(err)
-        resolve('Message delivered')
-      })
-    })
-  }
-
   // handlePostBack
   handlePostBack(context, postback, profile, sender, reply, t) {
     Logger.log('info', 'handlePostBack')
-
-    let newContext = {}
 
     if (_.includes(postback.payload, _const.responseType.takeSuggestion)) {
       return this.handleSetContextFromSuggestion(postback.payload, sender, profile, null, reply, t)
     }
 
+    let newContext = {}
     switch(postback.payload) {
     case _const.responseType.getStarted:
       return this.handleGetStarted(sender, profile, reply, t)
