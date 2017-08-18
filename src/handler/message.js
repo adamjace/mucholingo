@@ -468,7 +468,7 @@ const getContextSuggestion = (profile, t) => {
     return [getLanguageName(splice[0], t), getLanguageName(splice[1], t)]
   }
 
-  shuffled = _.remove(shuffled, (n) => { return n !== localeLanguageName })
+  shuffled = _.remove(shuffled, (n) => { return n !== locale })
   return [localeLanguageName, getLanguageName(shuffled[0], t)]
 }
 
