@@ -78,6 +78,8 @@ class MessageHandler {
         const context = getContextFromMessage(message.text, true, t)
         if (context.hasTwo && context.from !== context.to) {
           await this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)
+        } else {
+          await this.handleTranslation(response.context, sender, message, reply, t)
         }
       } else {
         // we made it! translate the message
