@@ -11,7 +11,8 @@ const responseType = {
   list: '#list',
   setDefault: '#setdefault',
   wantSuggestions: '#wantsuggestions',
-  takeSuggestion: '#suggestion:'
+  takeSuggestion: '#suggestion:',
+  changeCmd: '#changecmd='
 }
 
 const languageExamples = [

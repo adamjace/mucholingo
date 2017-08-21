@@ -29,13 +29,15 @@ class MessageHandler {
     return promise((resolve, reject) => {
       reply(payload, (err) => {
         if (err) reject(err)
-        resolve('Message delivered')
+        resolve(payload)
       })
     })
   }
 
+  // handleMessage gets called to handle all incoming user messages
   async handleMessage(payload, reply) {
     Logger.log('info', JSON.stringify(payload))
+
     const timer = new Timer()
     timer.start()
 
@@ -71,19 +73,16 @@ class MessageHandler {
       }
       else if (!response.context) {
         await this.handleNoContext(sender, profile, message, reply, t)
-      }
-      else if (isPossibleChangeCommand(message.text, t)) {
+      } else {
         // we have context and the user has sent a text message, before translation check if this is
         // a possible direct change command: {lang} to {lang}
-        const context = getContextFromMessage(message.text, true, t)
-        if (context.hasTwo && context.from !== context.to) {
-          await this.handleSetContext(context.code, context.from, context.to, sender, null, reply, t)
+        const changeCmd = parseChangeCmd(message.text, t)
+        if (changeCmd.isDirectCmd && changeCmd.from !== changeCmd.to) {
+          await this.handleSetContext(changeCmd.code, changeCmd.from, changeCmd.to, sender, null, reply, t)
         } else {
-          await this.handleTranslation(response.context, sender, message, reply, t)
+          // we made it! translate the message
+          await this.handleTranslation(response.context, sender, message, reply, changeCmd, t)
         }
-      } else {
-        // we made it! translate the message
-        await this.handleTranslation(response.context, sender, message, reply, t)
       }
     } catch (err) {
       Logger.log('error', JSON.stringify(err))
@@ -97,7 +96,7 @@ class MessageHandler {
   handlePostBack(context, postback, profile, sender, reply, t) {
     Logger.log('info', 'handlePostBack')
 
-    if (_.includes(postback.payload, _const.responseType.takeSuggestion)) {
+    if (_.includes(postback.payload, _const.responseType.changeCmd)) {
       return this.handleSetContextFromSuggestion(postback.payload, sender, profile, null, reply, t)
     }
 
@@ -188,12 +187,13 @@ class MessageHandler {
       text: t.say('suggestions'),
       quick_replies: []
     }
+    const from = getLocale(profile)
     const langs = getPopularSuggestions(profile)
     langs.forEach((code) => {
       response.quick_replies.push({
         'content_type': 'text',
         'title': getLanguageName(code, t),
-        'payload': `${_const.responseType.takeSuggestion}${code}`
+        'payload': `${_const.responseType.changeCmd}${from}:${code}`
       })
     })
 
@@ -257,7 +257,7 @@ class MessageHandler {
       quick_replies: [{
         'content_type': 'text',
         'title': t.say('need_help?'),
-        'payload': '#help'
+        'payload': _const.responseType.help
       }, {
         'content_type': 'text',
         'title': t.say('suggest_from', getLanguageNameLocale(profile, t)),
@@ -292,9 +292,7 @@ class MessageHandler {
   // handleSetContextFromSuggestion
   handleSetContextFromSuggestion(payload, sender, profile, message, reply, t) {
     Logger.log('info', 'handleSetContextFromSuggestion')
-    const from = getLocale(profile)
-    const to = payload.split(':')[1]
-    const code = `${from}:${to}`
+    const code = payload.split('=')[1]
     const context = getContextFromCode(code, t)
     mp.track('I change context with quick link', sender)
     return this.handleSetContext(code, context.from, context.to, sender, message, reply, t)
@@ -317,29 +315,40 @@ class MessageHandler {
   }
 
   // handleTranslation
-  async handleTranslation(context, sender, message, reply, t) {
+  async handleTranslation(context, sender, message, reply, changeCmd, t) {
     Logger.log('info', 'handleTranslation')
-    let response = {}
+    let response = {quick_replies: []}
 
     try {
-      const result = await translate(message.text, context)
-      if (result.length > _const.maxTextReplyLength) {
-        reply({text: t.say('too_long')})
+      response.text = await translate(message.text, context)
+      if (response.text.length > _const.maxTextReplyLength) {
+        return reply({text: t.say('too_long')})
       }
-      response.text = result
+
       // check if the user actually wants help by passing a quick reply button with the translated text
       if (_.includes(message.text.toLowerCase(), t.say('help'))) {
-        response.quick_replies = [{
+        response.quick_replies.push({
           'content_type': 'text',
           'title': t.say('need_help?'),
-          'payload': '#help'
-        }]
+          'payload': _const.responseType.help
+        })
+      }
+      // two languages have been detected in the users message, offer a change command as a quick reply
+      if (changeCmd.hasTwo) {
+        response.quick_replies.push({
+          'content_type': 'text',
+          'title': t.say('lang_to_lang', changeCmd.from, changeCmd.to),
+          'payload': `${_const.responseType.changeCmd}${changeCmd.code}`
+        })
       }
       mp.track('I send a message to be translated', sender, message)
     } catch(err) {
       Logger.log('error', JSON.stringify(err))
       response = { text: t.say('translation_error') }
     }
+
+    if (response.quick_replies.length === 0)
+      delete response.quick_replies
 
     return this.send(reply, response)
   }
@@ -358,7 +367,7 @@ class MessageHandler {
       getContextSuggestion,
       getPopularSuggestions,
       getRandom,
-      isPossibleChangeCommand
+      parseChangeCmd
     }
   }
 }
@@ -492,10 +501,15 @@ const shuffleArray = (array) => {
   return array
 }
 
-// isPossibleChangeCommand
-const isPossibleChangeCommand = (message, t) => {
+// parseChangeCmd
+const parseChangeCmd = (message, t) => {
+  let isDirectCmd = false
+  const context = getContextFromMessage(message, false, t)
   const words = message.split(' ')
-  return words.length === 3 && words[1] === t.say('to')
+  if (words.length === 3 && words[1] === t.say('to') && context.hasTwo) {
+    isDirectCmd = true
+  }
+  return Object.assign({}, context, { isDirectCmd })
 }
 
 module.exports = MessageHandler
