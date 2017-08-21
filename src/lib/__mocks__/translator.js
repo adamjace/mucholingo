@@ -4,7 +4,7 @@ const promise = require('../async')
 
 const translate = () => {
   return promise((resolve) => {
-    resolve(true)
+    resolve('mocked translation')
   })
 }
 

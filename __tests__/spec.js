@@ -9,12 +9,15 @@ const _MessageHandler = require('../src/handler/message')
 const _ProfileHandler = require('../src/handler/profile')
 const Localise = require('../src/locale/localise')
 
-let lastReply = '';
+let lastReply = ''
+let quickReplies = []
+
 const userId = 'testUserId'
 
-const reply = ({text}, cb) => {
-  lastReply = text
-  if (cb) cb()
+const reply = (payload, cb) => {
+  lastReply = payload.text
+  quickReplies = payload.quick_replies
+  cb && cb()
 }
 
 const profile = {
@@ -129,6 +132,7 @@ describe('Bot tests', () => {
       db.__setContext(undefined)
       payload.message.text = 'help'
       spyOn(MessageHandler, 'handleHelp')
+      expect(MessageHandler.handleHelp).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -147,36 +151,72 @@ describe('Bot tests', () => {
       })
     })
 
-    it('should call handleTranslation if context is set', (done) => {
-      db.__setContext(true)
-      payload.message.text = 'test message'
-      payload.sender.id = userId
-      spyOn(MessageHandler, 'handleTranslation')
-      spyOn(MessageHandler, 'handleNoContext')
-      MessageHandler.handleMessage(payload, reply).then(() => {
-        expect(MessageHandler.handleTranslation).toHaveBeenCalled()
-        expect(MessageHandler.handleNoContext).not.toHaveBeenCalled()
-        expect(lastReply).not.toEqual(_const.lostInTranslation)
-        done()
-      })
-    })
-
-    it('should NOT call handleTranslation if no context is set', (done) => {
-      db.__setContext(undefined)
-      payload.sender.id = userId
-      payload.message.text = 'test message'
-      spyOn(MessageHandler, 'handleTranslation')
-      spyOn(MessageHandler, 'handleNoContext')
-      MessageHandler.handleMessage(payload, reply).then(() => {
+    describe('handleTranslation', () => {
+      it('should be called with no quick replies', (done) => {
+        db.__setContext(true)
+        payload.message.text = 'test message'
+        payload.sender.id = userId
+        spyOn(MessageHandler, 'handleTranslation')
+        spyOn(MessageHandler, 'handleNoContext')
         expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
-        expect(MessageHandler.handleNoContext).toHaveBeenCalled()
-        done()
+        MessageHandler.handleMessage(payload, reply).then(() => {
+          expect(MessageHandler.handleTranslation).toHaveBeenCalled()
+          expect(MessageHandler.handleNoContext).not.toHaveBeenCalled()
+          expect(lastReply).toEqual('mocked translation')
+          done()
+        })
+      })
+
+      it('should be called with 1 quick reply (help)', (done) => {
+        db.__setContext(true)
+        payload.message.text = 'test message help'
+        payload.sender.id = userId
+        spyOn(MessageHandler, 'handleTranslation')
+        spyOn(MessageHandler, 'handleNoContext')
+        expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
+        MessageHandler.handleMessage(payload, reply).then(() => {
+          expect(MessageHandler.handleTranslation).toHaveBeenCalled()
+          expect(MessageHandler.handleNoContext).not.toHaveBeenCalled()
+          expect(lastReply).toEqual('mocked translation')
+          expect(quickReplies.length).toBe(1)
+          done()
+        })
+      })
+
+      it('should be called with 1 quick reply (change cmd)', (done) => {
+        db.__setContext(true)
+        payload.message.text = 'test message english something else and spanish'
+        payload.sender.id = userId
+        spyOn(MessageHandler, 'handleTranslation')
+        spyOn(MessageHandler, 'handleNoContext')
+        MessageHandler.handleMessage(payload, reply).then(() => {
+          expect(MessageHandler.handleTranslation).toHaveBeenCalled()
+          expect(MessageHandler.handleNoContext).not.toHaveBeenCalled()
+          expect(lastReply).toEqual('mocked translation')
+          expect(quickReplies.length).toBe(1)
+          done()
+        })
+      })
+
+      it('should NOT call be called if no context is set', (done) => {
+        db.__setContext(undefined)
+        payload.sender.id = userId
+        payload.message.text = 'test message'
+        spyOn(MessageHandler, 'handleTranslation')
+        spyOn(MessageHandler, 'handleNoContext')
+        expect(MessageHandler.handleNoContext).not.toHaveBeenCalled()
+        MessageHandler.handleMessage(payload, reply).then(() => {
+          expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
+          expect(MessageHandler.handleNoContext).toHaveBeenCalled()
+          done()
+        })
       })
     })
 
     it('should call handleSetContext', (done) => {
       payload.message.text = 'english to spanish'
       spyOn(MessageHandler, 'handleSetContext')
+      expect(MessageHandler.handleSetContext).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -198,6 +238,7 @@ describe('Bot tests', () => {
       payload.sender.id = userId
       spyOn(MessageHandler, 'handleSetContext')
       spyOn(MessageHandler, 'handleTranslation')
+      expect(MessageHandler.handleSetContext).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
@@ -223,6 +264,7 @@ describe('Bot tests', () => {
       payload.postback.payload = _const.responseType.getStarted
       const reply = {}
       spyOn(MessageHandler, 'handleGetStarted')
+      expect(MessageHandler.handleGetStarted).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleGetStarted).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -233,6 +275,7 @@ describe('Bot tests', () => {
     it('should call handleHelp postback', (done) => {
       payload.postback.payload = _const.responseType.help
       spyOn(MessageHandler, 'handleHelp')
+        expect(MessageHandler.handleHelp).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -243,6 +286,7 @@ describe('Bot tests', () => {
     it('should call handleReset postback', (done) => {
       payload.postback.payload = _const.responseType.reset
       spyOn(MessageHandler, 'handleReset')
+      expect(MessageHandler.handleReset).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleReset).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -253,6 +297,7 @@ describe('Bot tests', () => {
     it('should call handleSwitch postback', (done) => {
       payload.postback.payload = _const.responseType.switch
       spyOn(MessageHandler, 'handleSwitch')
+      expect(MessageHandler.handleSwitch).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSwitch).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -263,6 +308,7 @@ describe('Bot tests', () => {
     it('should call handleShowAllLanguages postback', (done) => {
       payload.postback.payload = _const.responseType.list
       spyOn(MessageHandler, 'handleShowAllLanguages')
+      expect(MessageHandler.handleShowAllLanguages).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleShowAllLanguages).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -274,6 +320,7 @@ describe('Bot tests', () => {
       payload.postback = null
       payload.message = {quick_reply:{payload: _const.responseType.help}}
       spyOn(MessageHandler, 'handleHelp')
+      expect(MessageHandler.handleHelp).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleHelp).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -285,6 +332,7 @@ describe('Bot tests', () => {
       payload.postback.payload = _const.responseType.setDefault
       const reply = {}
       spyOn(MessageHandler, 'handleSetContext')
+      expect(MessageHandler.handleSetContext).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSetContext).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -296,6 +344,7 @@ describe('Bot tests', () => {
       payload.postback.payload = _const.responseType.wantSuggestions
       const reply = {}
       spyOn(MessageHandler, 'handleShowSuggestions')
+      expect(MessageHandler.handleShowSuggestions).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleShowSuggestions).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -307,6 +356,7 @@ describe('Bot tests', () => {
       payload.postback.payload = `${_const.responseType.takeSuggestion}es`
       const reply = {}
       spyOn(MessageHandler, 'handleSetContextFromSuggestion')
+      expect(MessageHandler.handleSetContextFromSuggestion).not.toHaveBeenCalled()
       MessageHandler.handleMessage(payload, reply).then(() => {
         expect(MessageHandler.handleSetContextFromSuggestion).toHaveBeenCalled()
         expect(lastReply).not.toEqual(_const.lostInTranslation)
@@ -426,15 +476,6 @@ describe('Bot tests', () => {
       expect(privates.getAllLanguageNames(t).length).toEqual(91)
     })
 
-    it('should detect possible change commands', () => {
-      expect(privates.isPossibleChangeCommand('english to spanish', t)).toEqual(true)
-      expect(privates.isPossibleChangeCommand('a to b', t)).toEqual(true)
-      expect(privates.isPossibleChangeCommand('english dutch', t)).toEqual(false)
-      expect(privates.isPossibleChangeCommand('english romanian spanish', t)).toEqual(false)
-      expect(privates.isPossibleChangeCommand('english to', t)).toEqual(false)
-      expect(privates.isPossibleChangeCommand('blah_to_blah', t)).toEqual(false)
-    })
-
     it('should test getRandom returns a single response', () => {
       expect([privates.getRandom([1,2,3,4,5,6,7,8,9,0])].length).toEqual(1)
     })
@@ -442,6 +483,32 @@ describe('Bot tests', () => {
     it('should default to EN if locale is not supported', () => {
       const t = new Localise('it')
       expect(t.locale).toEqual('en')
+    })
+
+    describe('Test change commands', () => {
+      it('should detect a direct change command', () => {
+        const changeCmd = privates.parseChangeCmd('english to spanish', t)
+        expect(changeCmd.isDirectCmd).toEqual(true)
+        expect(changeCmd.hasTwo).toEqual(true)
+      })
+
+      it('should detect a possible change command', () => {
+        const changeCmd = privates.parseChangeCmd('english something spanish', t)
+        expect(changeCmd.isDirectCmd).toEqual(false)
+        expect(changeCmd.hasTwo).toEqual(true)
+      })
+
+      it('should NOT detect a change command with one match', () => {
+        const changeCmd = privates.parseChangeCmd('english to', t)
+        expect(changeCmd.isDirectCmd).toEqual(false)
+        expect(changeCmd.hasOne).toEqual(true)
+      })
+
+      it('should NOT detect a change command with no matches', () => {
+        const changeCmd = privates.parseChangeCmd('blah to blah', t)
+        expect(changeCmd.isDirectCmd).toEqual(false)
+        expect(changeCmd.hasNone).toEqual(true)
+      })
     })
   })
 
@@ -528,13 +595,30 @@ describe('Bot tests', () => {
       expect(privates.getAllLanguageNames(t).length).toEqual(91)
     })
 
-    it('(in Spanish) should detect possible change commands', () => {
-      expect(privates.isPossibleChangeCommand('ingles a espanol', t)).toEqual(true)
-      expect(privates.isPossibleChangeCommand('alemana a zulu', t)).toEqual(true)
-      expect(privates.isPossibleChangeCommand('english dutch', t)).toEqual(false)
-      expect(privates.isPossibleChangeCommand('english romanian spanish', t)).toEqual(false)
-      expect(privates.isPossibleChangeCommand('english to', t)).toEqual(false)
-      expect(privates.isPossibleChangeCommand('blah_to_blah', t)).toEqual(false)
+    describe('(in Spanish) Test change commands', () => {
+      it('(in Spanish) should detect a direct change command', () => {
+        const changeCmd = privates.parseChangeCmd('ingles a espanol', t)
+        expect(changeCmd.isDirectCmd).toEqual(true)
+        expect(changeCmd.hasTwo).toEqual(true)
+      })
+
+      it('(in Spanish) should detect a possible change command', () => {
+        const changeCmd = privates.parseChangeCmd('ingles al espanol', t)
+        expect(changeCmd.isDirectCmd).toEqual(false)
+        expect(changeCmd.hasTwo).toEqual(true)
+      })
+
+      it('(in Spanish) should NOT detect a change command with one match', () => {
+        const changeCmd = privates.parseChangeCmd('ingles a', t)
+        expect(changeCmd.isDirectCmd).toEqual(false)
+        expect(changeCmd.hasOne).toEqual(true)
+      })
+
+      it('(in Spanish) should NOT detect a change command with no matches', () => {
+        const changeCmd = privates.parseChangeCmd('blah to blah', t)
+        expect(changeCmd.isDirectCmd).toEqual(false)
+        expect(changeCmd.hasNone).toEqual(true)
+      })
     })
   })
 })
