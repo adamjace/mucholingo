@@ -213,37 +213,41 @@ describe('Bot tests', () => {
       })
     })
 
-    it('should call handleSetContext', (done) => {
-      payload.message.text = 'english to spanish'
-      spyOn(MessageHandler, 'handleSetContext')
-      expect(MessageHandler.handleSetContext).not.toHaveBeenCalled()
-      MessageHandler.handleMessage(payload, reply).then(() => {
-        expect(MessageHandler.handleSetContext).toHaveBeenCalled()
-        expect(lastReply).not.toEqual(_const.lostInTranslation)
-        done()
-      })
-    })
-
-    it('should NOT call handleSetContext', (done) => {
-      payload.message.text = 'english to blah'
-      spyOn(MessageHandler, 'handleSetContext')
-      MessageHandler.handleMessage(payload, reply).then(() => {
+    describe('handleSetContext', () => {
+      it('should be called from a direct command with no context', (done) => {
+        db.__setContext(undefined)
+        payload.message.text = 'english to spanish'
+        spyOn(MessageHandler, 'handleSetContext')
         expect(MessageHandler.handleSetContext).not.toHaveBeenCalled()
-        done()
+        MessageHandler.handleMessage(payload, reply).then(() => {
+          expect(MessageHandler.handleSetContext).toHaveBeenCalled()
+          expect(lastReply).not.toEqual(_const.lostInTranslation)
+          done()
+        })
       })
-    })
 
-    it('should call handleSetContext from a change command', (done) => {
-      payload.message.text = 'french to dutch'
-      payload.sender.id = userId
-      spyOn(MessageHandler, 'handleSetContext')
-      spyOn(MessageHandler, 'handleTranslation')
-      expect(MessageHandler.handleSetContext).not.toHaveBeenCalled()
-      MessageHandler.handleMessage(payload, reply).then(() => {
-        expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
-        expect(MessageHandler.handleSetContext).toHaveBeenCalled()
-        expect(lastReply).not.toEqual(_const.lostInTranslation)
-        done()
+      it('should be called from a direct change command with context set', (done) => {
+        db.__setContext(true)
+        payload.message.text = 'french to dutch'
+        payload.sender.id = userId
+        spyOn(MessageHandler, 'handleSetContext')
+        spyOn(MessageHandler, 'handleTranslation')
+        expect(MessageHandler.handleSetContext).not.toHaveBeenCalled()
+        MessageHandler.handleMessage(payload, reply).then(() => {
+          expect(MessageHandler.handleTranslation).not.toHaveBeenCalled()
+          expect(MessageHandler.handleSetContext).toHaveBeenCalled()
+          expect(lastReply).not.toEqual(_const.lostInTranslation)
+          done()
+        })
+      })
+
+      it('should not be called', (done) => {
+        payload.message.text = 'english to blah'
+        spyOn(MessageHandler, 'handleSetContext')
+        MessageHandler.handleMessage(payload, reply).then(() => {
+          expect(MessageHandler.handleSetContext).not.toHaveBeenCalled()
+          done()
+        })
       })
     })
   })
@@ -353,7 +357,7 @@ describe('Bot tests', () => {
     })
 
     it('should call handleSetContextFromSuggestion postback', (done) => {
-      payload.postback.payload = `${_const.responseType.takeSuggestion}es`
+      payload.postback.payload = `${_const.responseType.changeCmd}en:es`
       const reply = {}
       spyOn(MessageHandler, 'handleSetContextFromSuggestion')
       expect(MessageHandler.handleSetContextFromSuggestion).not.toHaveBeenCalled()

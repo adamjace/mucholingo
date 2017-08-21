@@ -29,14 +29,15 @@ class MessageHandler {
     return promise((resolve, reject) => {
       reply(payload, (err) => {
         if (err) reject(err)
-        resolve('Message delivered')
+        resolve(payload)
       })
     })
   }
 
-  // handleMessage is the main HTTP transport function
+  // handleMessage gets called to handle all incoming user messages
   async handleMessage(payload, reply) {
     Logger.log('info', JSON.stringify(payload))
+
     const timer = new Timer()
     timer.start()
 
@@ -95,7 +96,7 @@ class MessageHandler {
   handlePostBack(context, postback, profile, sender, reply, t) {
     Logger.log('info', 'handlePostBack')
 
-    if (_.includes(postback.payload, _const.responseType.takeSuggestion)) {
+    if (_.includes(postback.payload, _const.responseType.changeCmd)) {
       return this.handleSetContextFromSuggestion(postback.payload, sender, profile, null, reply, t)
     }
 
@@ -186,12 +187,13 @@ class MessageHandler {
       text: t.say('suggestions'),
       quick_replies: []
     }
+    const from = getLocale(profile)
     const langs = getPopularSuggestions(profile)
     langs.forEach((code) => {
       response.quick_replies.push({
         'content_type': 'text',
         'title': getLanguageName(code, t),
-        'payload': `${_const.responseType.takeSuggestion}${code}`
+        'payload': `${_const.responseType.changeCmd}${from}:${code}`
       })
     })
 
@@ -290,9 +292,7 @@ class MessageHandler {
   // handleSetContextFromSuggestion
   handleSetContextFromSuggestion(payload, sender, profile, message, reply, t) {
     Logger.log('info', 'handleSetContextFromSuggestion')
-    const from = getLocale(profile)
-    const to = payload.split(':')[1]
-    const code = `${from}:${to}`
+    const code = payload.split('=')[1]
     const context = getContextFromCode(code, t)
     mp.track('I change context with quick link', sender)
     return this.handleSetContext(code, context.from, context.to, sender, message, reply, t)
@@ -346,6 +346,9 @@ class MessageHandler {
       Logger.log('error', JSON.stringify(err))
       response = { text: t.say('translation_error') }
     }
+
+    if (response.quick_replies.length === 0)
+      delete response.quick_replies
 
     return this.send(reply, response)
   }
