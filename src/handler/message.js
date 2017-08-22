@@ -337,7 +337,7 @@ class MessageHandler {
       if (changeCmd.hasTwo) {
         response.quick_replies.push({
           'content_type': 'text',
-          'title': t.say('lang_to_lang', changeCmd.from, changeCmd.to),
+          'title': t.say('lang_to_lang?', changeCmd.from, changeCmd.to),
           'payload': `${_const.responseType.changeCmd}${changeCmd.code}`
         })
       }

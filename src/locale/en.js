@@ -5,6 +5,7 @@ module.exports = {
   'ask_for_help_with_context': 'Hola again. I see you\'ve asked for some help...\n\nI\'m currently translating everything you say from %s to %s\n\n',
   'reset': 'Reset',
   'lang_to_lang': '%s to %s',
+  'lang_to_lang?': '%s to %s?',
   'unreconised': 'Oops, I didn\'t quite catch that.',
   'part_unrecognised': 'I only caught %s in there. Try again, or ask me for "help"',
   'set_context': '%s to %s. Got it! Now go ahead and tell me what to say.',
