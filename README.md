@@ -1,8 +1,6 @@
-# ![Mucho Lingo](http://mucholingo.me/img/favicon.png) Mucho Lingo Bot
+# ![Mucho Lingo](https://scontent.fbne3-1.fna.fbcdn.net/v/t1.0-1/c2.0.40.40/p43x43/13962517_377253519065046_2963163042529052855_n.png?_nc_cat=0&oh=c36e57586acb8a0acecca4570ebdc746&oe=5B5D729E) Mucho Lingo Bot
 
 [![wercker status](https://app.wercker.com/status/eed01eef0cfc331c6e34799e24d330fc/s/master "wercker status")](https://app.wercker.com/project/byKey/eed01eef0cfc331c6e34799e24d330fc)
-[![Uptime Robot status](https://img.shields.io/uptimerobot/status/m778063707-ca0a882f9b3cc5d58a1d4100.svg)]()
-[![Uptime Robot ratio (7 days)](https://img.shields.io/uptimerobot/ratio/7/m778063707-ca0a882f9b3cc5d58a1d4100.svg)]()
 
 ¡Hola! Salut! Konnichiwa!
 
