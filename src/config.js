@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 const config = {
     'port': process.env.PORT,
@@ -15,12 +15,12 @@ const config = {
     'ssl_key': process.env.SSL_KEY,
     'ssl_cert': process.env.SSL_CERT,
     'ssl_ca': process.env.SSL_CA
-}
+};
 
 for (const key of Object.keys(config)) {
     if (!config[key]) {
-        throw new Error(`Invalid configuration. Missing "${key}"`)
+        throw new Error(`Invalid configuration. Missing "${key}"`);
     }
 }
 
-module.exports = config
+module.exports = config;

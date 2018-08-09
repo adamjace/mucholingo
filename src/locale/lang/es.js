@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 module.exports = [
     {
@@ -365,4 +365,4 @@ module.exports = [
         'name': 'zulu',
         'code': 'zu'
     }
-]
+];

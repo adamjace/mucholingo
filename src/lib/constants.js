@@ -1,7 +1,7 @@
-'use strict'
+'use strict';
 
-const maxTextReplyLength = 320
-const lostInTranslation = 'Lost in translation'
+const maxTextReplyLength = 320;
+const lostInTranslation = 'Lost in translation';
 
 const responseType = {
     'help': '#help',
@@ -13,14 +13,14 @@ const responseType = {
     'wantSuggestions': '#wantsuggestions',
     'takeSuggestion': '#suggestion:',
     'changeCmd': '#changecmd='
-}
+};
 
 const languageExamples = [
     'en', 'de', 'it', 'ko', 'nl', 'ja', 'ar',
     'es', 'fr', 'id', 'ru', 'zh-CN', 'el'
-]
+];
 
-const popularLanguages = ['es', 'en', 'fr', 'ja', 'de', 'ar']
+const popularLanguages = ['es', 'en', 'fr', 'ja', 'de', 'ar'];
 
 module.exports = {
     maxTextReplyLength,
@@ -28,4 +28,4 @@ module.exports = {
     responseType,
     languageExamples,
     popularLanguages
-}
+};

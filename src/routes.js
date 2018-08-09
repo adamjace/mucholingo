@@ -1,24 +1,24 @@
-'use strict'
+'use strict';
 
-const bot = require('./lib/bot')
+const bot = require('./lib/bot');
 
 class Routes {
 
     static makeRoutes(app) {
 
         const get = (req, res) => {
-            return bot._verify(req, res)
-        }
+            return bot._verify(req, res);
+        };
 
         const post = (req, res) => {
-            bot._handleMessage(req.body)
+            bot._handleMessage(req.body);
             // Facebook requires an immediate 200 OK response
-            res.send('ok')
-        }
+            res.send('ok');
+        };
 
-        app.get('/', get)
-        app.post('/', post)
+        app.get('/', get);
+        app.post('/', post);
     }
 }
 
-module.exports = Routes
+module.exports = Routes;

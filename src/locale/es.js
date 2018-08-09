@@ -19,4 +19,4 @@ module.exports = {
     'need_help?': '¿Necesitas ayuda?',
     'suggest_from': '%s a ...',
     'suggestions': 'Algunas opciones populares:'
-}
+};

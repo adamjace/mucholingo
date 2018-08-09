@@ -1,9 +1,9 @@
-'use strict'
+'use strict';
 
-const mixpanel = require('mixpanel')
-const config = require('../config')
+const mixpanel = require('mixpanel');
+const config = require('../config');
 
-let _mixpanel = mixpanel.init(config.mixpanel_token)
+let _mixpanel = mixpanel.init(config.mixpanel_token);
 
 class Mixpanel {
 
@@ -16,15 +16,15 @@ class Mixpanel {
             locale: profile.locale,
             timezone: profile.timezone,
             gender: profile.gender
-        })
+        });
     }
 
     static track(event, sender, message) {
         _mixpanel.track(event, {
             distinctId: sender.id,
             message: message
-        })
+        });
     }
 }
 
-module.exports = Mixpanel
+module.exports = Mixpanel;

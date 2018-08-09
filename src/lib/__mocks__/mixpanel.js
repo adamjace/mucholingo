@@ -1,8 +1,8 @@
-'use strict'
+'use strict';
 
 class Mixpanel {
     static setPerson() {}
     static track() {}
 }
 
-module.exports = Mixpanel
+module.exports = Mixpanel;
