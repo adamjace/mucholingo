@@ -14,7 +14,7 @@ const Routes = require('./routes')
 let app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({
-  extended: true
+    extended: true
 }))
 
 // setup routing
@@ -22,9 +22,9 @@ Routes.makeRoutes(app)
 
 // start https
 const options = {
-  key: fs.readFileSync(config.ssl_key),
-  cert: fs.readFileSync(config.ssl_cert),
-  ca: [fs.readFileSync(config.ssl_ca)]
+    key: fs.readFileSync(config.ssl_key),
+    cert: fs.readFileSync(config.ssl_cert),
+    ca: [fs.readFileSync(config.ssl_ca)]
 }
 https.createServer(options, app).listen(443)
 Logger.log('info', 'Server running over https')

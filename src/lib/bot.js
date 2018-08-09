@@ -6,9 +6,9 @@ const MessageHandler = require('../handler/message')
 const ErrorHandler = require('../handler/error')
 
 let bot = new Bot({
-  token: config.fb_token,
-  verify: config.fb_verify,
-  app_secret: config.fb_secret
+    token: config.fb_token,
+    verify: config.fb_verify,
+    app_secret: config.fb_secret
 })
 
 const messageHandler = new MessageHandler(bot)

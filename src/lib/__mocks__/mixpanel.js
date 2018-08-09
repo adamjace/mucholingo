@@ -1,8 +1,8 @@
 'use strict'
 
 class Mixpanel {
-  static setPerson() {}
-  static track() {}
+    static setPerson() {}
+    static track() {}
 }
 
 module.exports = Mixpanel

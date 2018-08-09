@@ -4,26 +4,30 @@ let store = {}
 const sizeLimit = 1000
 
 const get = (key) => {
-  return store[key]
+    return store[key]
 }
 
 const set = (key, value) => {
-  store[key] = value
+    store[key] = value
 }
 
 const clear = () => {
-  store = {}
+    store = {}
 }
 
 const size = () => {
-  return Object.keys(store).length
+    return Object.keys(store).length
 }
 
 const flushIfSizeLimitExceeded = () => {
-  if (size() < sizeLimit) return
-  clear()
+    if (size() < sizeLimit) return
+    clear()
 }
 
 module.exports = {
-  get, set, clear, size, flushIfSizeLimitExceeded
+    get,
+    set,
+    clear,
+    size,
+    flushIfSizeLimitExceeded
 }

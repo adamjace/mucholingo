@@ -4,9 +4,9 @@ const Logger = require('../lib/logger')
 
 class ErrorHandler {
 
-  static handleError(err) {
-    Logger.log('error', err.message)
-  }
+    static handleError(err) {
+        Logger.log('error', err.message)
+    }
 
 }
 
